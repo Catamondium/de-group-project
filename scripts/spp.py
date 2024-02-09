@@ -14,8 +14,8 @@ def template(infile: TFile, outfile: TFile, vars: Dict[str, str]):
 if __name__ == '__main__':
     from argparse import ArgumentParser, FileType
 
-    def kvpair(arg):
-        return arg.split('=')
+    def kvpair(arg: str):
+        return arg.split('=', 1)
 
     parser = ArgumentParser(
         description="Simple PreProcessor, substitution based")
