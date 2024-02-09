@@ -6,7 +6,7 @@
 
 PROJECT_NAME = de-py-katas
 REGION = eu-west-2
-PYTHON_INTERPRETER = python
+PYTHON_INTERPRETER = python3
 WD=$(shell pwd)
 PYTHONPATH=${WD}
 SHELL := /bin/bash
@@ -24,12 +24,12 @@ create-environment:
 	@echo ">>> Setting up VirtualEnv."
 	( \
 	    $(PIP) install -q virtualenv virtualenvwrapper; \
-	    virtualenv venv --python=$(PYTHON_INTERPRETER); \
+	    $(PYTHON_INTERPRETER) -m venv venv; \
 	)
 
-requirements: venv requirements.txt .git/hooks/pre-commit
+requirements: venv requirements.txt
 	$(call execute_in_env, $(PIP) install -r requirements.txt)
-	# ln -s $(realpath pre-commit.sh) .git/hooks/pre-commit
+	ln -sf $(realpath pre-commit.sh) .git/hooks/pre-commit
 
 
 # Define utility variable to help calling Python from the virtual environment
@@ -58,7 +58,7 @@ bandit:
 safety:
 	$(call execute_in_env, $(PIP) install safety)
 
-dev-setup: requirements bandit safety pytest flake
+dev-setup: bandit safety pytest flake requirements
 
 ## Run the flake8 code check
 run-flake:
@@ -72,7 +72,7 @@ run-safety: requirements.txt
 
 ## Run all the unit tests
 unit-tests:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest ${PYTEST_OPTS})
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest ${PYTEST_OPTS} test/*.py)
 
 run-security: run-bandit run-safety
 
