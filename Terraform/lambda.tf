@@ -1,4 +1,4 @@
-resource "aws_lambda_function" "s3_file_reader" {
+resource "aws_lambda_function" "extraction_lambda" {
   function_name = "${var.ingestion_lambda_name}lambda"
   role          = aws_iam_role.extraction_lambda_role.arn
   handler       = "extractor.lambda_handler"
