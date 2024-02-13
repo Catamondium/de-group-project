@@ -13,6 +13,7 @@ SHELL := /bin/bash
 PROFILE = default
 PIP:=pip
 PYTEST_OPTS = -vvvv
+PYTHONPATH=./src
 
 ## Create python interpreter environment.
 create-environment:
@@ -77,4 +78,4 @@ unit-tests:
 run-security: run-bandit run-safety
 
 ## Run all checks
-run-checks: run-flake unit-tests run-security
+run-checks: run-security run-flake unit-tests
