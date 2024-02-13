@@ -24,7 +24,6 @@ TABLES = ["currency",
 def extract(client, conn: pg.Connection, bucket, table, time):
     rows = conn.run(f"SELECT * FROM {table}")
     data = rows_to_dict(rows, conn.columns)
-    print(data)
     df = pd.DataFrame(data=data)
     key = f"{time.isoformat()}/{table}.pqt"
     logger.info(f'output key is {key}')
@@ -58,8 +57,6 @@ def lambda_handler(event, context):
                     """)
 
         assert rows is not None
-
-        print(rows)
 
         tables = [item[0] for item in rows]
 

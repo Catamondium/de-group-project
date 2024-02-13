@@ -4,7 +4,9 @@ import pandas as pd
 from unittest.mock import Mock, patch
 import boto3
 from datetime import datetime
+from configparser import ConfigParser
 import pytest
+from io import BytesIO
 import os
 
 
@@ -44,6 +46,20 @@ class TestRowstoDict:
         actual = rows_to_dict(items, columns)
 
         assert actual == expected
+
+
+@pytest.fixture(scope='function')
+def mockdb_creds():
+    """Mocked AWS Credentials for moto."""
+
+    config = ConfigParser()
+    config.read('.env.ini')
+    section = config['DEFAULT']
+
+    os.environ['PGUSER'] = section['PGUSER']
+    os.environ['PGPASSWORD'] = section['PGPASSWORD']
+    os.environ['PGHOST'] = "127.0.0.1"
+    os.environ['PGDATABASE'] = "totesys_test_subset"
 
 
 @pytest.fixture(scope='function')
@@ -127,3 +143,26 @@ def test_lambda_handler(conn, MockExtract, client):
 
     MockExtract.assert_called_with(
         's3', connMock, 'ingestion', 'example_table', time)
+
+
+@mock_aws
+def test_integrate(s3, mockdb_creds):
+
+    event = {'time': datetime.fromisoformat("2024-02-13T10:45:18")}
+
+    s3.create_bucket(
+        Bucket='ingestion',
+        CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+
+    lambda_handler(event, '')
+
+    objects = s3.list_objects_v2(Bucket='ingestion')
+
+    files = [file['Key'] for file in objects['Contents']]
+    assert len(files) == 11
+
+    resp = s3.get_object(Bucket='ingestion',
+                         Key="2024-02-13T10:45:18/sales_order.pqt")
+
+    df = pd.read_parquet(BytesIO(resp['Body'].read()))
+    print(df.head(), df.tail(), df.count(), df.to_records())
