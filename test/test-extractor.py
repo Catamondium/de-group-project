@@ -96,8 +96,8 @@ def test_extract(upload):
     table = 'cat'
     time = datetime.fromisoformat(datestring)
 
-    df = pd.DataFrame(data=[{'a': 1, 'b': 2, 'c': 'AAA'}, {
-                      'a': 4, 'b': 5, 'c': 'BBB'}])
+    df = pd.DataFrame(data=[{'a': 1, 'b': 2, 'c': 'AAA'},
+                            {'a': 4, 'b': 5, 'c': 'BBB'}])
 
     key = f"{datestring}/{table}.pqt"
 

@@ -4,7 +4,7 @@ Data engineering group project
 
 ## Common
 
-[Trello](https://trello.com/b/CEoyv2AQ/northcoders) \
+[Trello](https://trello.com/b/CEoyv2AQ/northcoders)
 
 - [Specification](https://github.com/northcoders/de-project-specification)
 - DB diagrams
