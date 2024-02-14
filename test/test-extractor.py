@@ -8,6 +8,7 @@ from configparser import ConfigParser
 import pytest
 from io import BytesIO
 import os
+from sample_datasets import sample_dataset
 
 
 class SAME_DF:
@@ -147,9 +148,20 @@ def test_lambda_handler(conn, MockExtract, client):
 
 @mock_aws
 def test_integrate(s3, mockdb_creds):
-
+    TABLES = ["currency",
+              "payment",
+              "department",
+              "transaction",
+              "design",
+              "address",
+              "staff",
+              "counterparty",
+              "purchase_order",
+              "payment_type",
+              "sales_order"]
     event = {'time': datetime.fromisoformat("2024-02-13T10:45:18")}
 
+    # ACT
     s3.create_bucket(
         Bucket='ingestion',
         CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
@@ -157,12 +169,21 @@ def test_integrate(s3, mockdb_creds):
     lambda_handler(event, '')
 
     objects = s3.list_objects_v2(Bucket='ingestion')
-
     files = [file['Key'] for file in objects['Contents']]
+
     assert len(files) == 11
 
-    resp = s3.get_object(Bucket='ingestion',
-                         Key="2024-02-13T10:45:18/sales_order.pqt")
+    for table in TABLES:
+        expected_file_name = f'2024-02-13T10:45:18/{table}.pqt'
+        assert expected_file_name in files
 
-    df = pd.read_parquet(BytesIO(resp['Body'].read()))
-    print(df.head(), df.tail(), df.count(), df.to_records())
+        expected_table = sample_dataset[table]
+        # print(expected_table[0], table, '-------------------------------')
+
+        resp = s3.get_object(Bucket='ingestion',
+                             Key=f"2024-02-13T10:45:18/{table}.pqt")
+        df = pd.read_parquet(BytesIO(resp['Body'].read()))
+        existing_table = df.to_records()
+
+        for i, row in enumerate(existing_table):
+            assert len(row) == len(expected_table[i]) + 1
