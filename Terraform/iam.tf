@@ -22,7 +22,7 @@ resource "aws_iam_role" "extraction_lambda_role" {
 # policy and roles for the put s3 document
 data "aws_iam_policy_document" "put_s3_document" {
   statement {
-    actions = ["s3:PutObject"]
+    actions = ["s3:PutObjectRetention"]
     resources = [
       "${aws_s3_bucket.rannoch-s3-ingestion-bucket.arn}"
     ]
@@ -51,12 +51,12 @@ data "aws_iam_policy_document" "cw_document" {
 resource "aws_lambda_permission" "allow_cloudwatch" {
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
-  function_name = "${aws_lambda_function.extraction_lambda.function_name}"
+  function_name = aws_lambda_function.extraction_lambda.function_name
   principal     = "events.amazonaws.com"
-  #source_account = "${data.aws_caller_identity.current.account_id}"
-  source_arn    = "${aws_cloudwatch_event_rule.every_five_minutes.arn}"
-  #qualifier     = aws_lambda_alias.test_alias.name
+  source_arn = aws_cloudwatch_event_rule.every_five_minutes.arn
 }
+
+
 
 resource "aws_iam_policy" "s3_policy" {
   name_prefix = "s3-policy-${var.bucket_name}"

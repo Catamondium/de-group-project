@@ -8,6 +8,7 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 # anticipated table structure
+
 TABLES = ["currency",
           "payment",
           "department",
@@ -49,6 +50,7 @@ def lambda_handler(event, context):
         bucket = environ.get('S3_EXTRACT_BUCKET', 'ingestion')
 
         # query to dynamically retrieve all valid tables
+        
         rows = connection.run(r"""
                     SELECT tablename
                     FROM pg_catalog.pg_tables
