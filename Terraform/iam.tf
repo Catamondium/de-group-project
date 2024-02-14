@@ -42,10 +42,20 @@ data "aws_iam_policy_document" "cw_document" {
     actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
 
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.ingestion_lambda_name}:*"
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${aws_lambda_function.extraction_lambda.function_name}:*"
       # add the transform lambda role here 
     ]
   }
+}
+
+resource "aws_lambda_permission" "allow_cloudwatch" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = "${aws_lambda_function.extraction_lambda.function_name}"
+  principal     = "events.amazonaws.com"
+  #source_account = "${data.aws_caller_identity.current.account_id}"
+  source_arn    = "${aws_cloudwatch_event_rule.every_five_minutes.arn}"
+  #qualifier     = aws_lambda_alias.test_alias.name
 }
 
 resource "aws_iam_policy" "s3_policy" {
