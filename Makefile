@@ -43,6 +43,14 @@ endef
 
 ################################################################################################################
 # Set Up
+## local testing database
+init-db:
+	# Why does make have to parse like this?
+	if [[ ! -f .env.ini ]]; then\
+		echo -e "[DEFAULT]\nPGUSER=\nPGPASSWORD=\n" > .env.ini;\
+	fi;
+	psql -f ./test/test_extract_db/subset_test_db.sql
+
 ## Install flake8
 flake:
 	$(call execute_in_env, $(PIP) install flake8)
@@ -79,3 +87,5 @@ run-security: run-bandit run-safety
 
 ## Run all checks
 run-checks: run-security run-flake unit-tests
+
+init: create-environment requirements init-db
