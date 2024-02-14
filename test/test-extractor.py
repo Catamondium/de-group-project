@@ -99,7 +99,7 @@ def test_upload_parquet(s3):
 
     assert key in files
 
-
+# extract()
 @patch("extractor.upload_parquet")
 def test_extract(upload):
     client = 's3'
@@ -123,14 +123,61 @@ def test_extract(upload):
     upload.assert_called_with(client, 'ingestion', key, SAME_DF(df))
 
 
+@patch("extractor.upload_parquet")
+def test_extract_with_mod_queries(upload):
+    client = 's3'
+    datestring = "2024-02-13T10:45:18"
+
+    os.environ['S3_EXTRACT_BUCKET'] = 'ingestion'
+
+    conn = Mock()
+    conn.run.return_value = [[1, 2, 'AAA'], [4, 5, 'BBB']]
+    conn.columns = [{'name': 'a'}, {'name': 'b'}, {'name': 'c'}]
+    table = 'design'
+    time = datetime.fromisoformat(datestring)
+
+    df = pd.DataFrame(data=[{'a': 1, 'b': 2, 'c': 'AAA'},
+                            {'a': 4, 'b': 5, 'c': 'BBB'}])
+
+    key = f"{datestring}/{table}.pqt"
+
+    extract(client, conn, 'ingestion', table, time)
+
+    upload.assert_called_with(client, 'ingestion', key, SAME_DF(df))
+
+@patch("extractor.upload_parquet")
+def test_extract_with_mod_queries_plus_last_updated_time(upload):
+    client = 's3'
+    datestring = "2024-02-13T10:45:18"
+
+    os.environ['S3_EXTRACT_BUCKET'] = 'ingestion'
+
+    conn = Mock()
+    conn.run.return_value = [[1, 2, 'AAA'], [4, 5, 'BBB']]
+    conn.columns = [{'name': 'a'}, {'name': 'b'}, {'name': 'c'}]
+    table = 'design'
+    time = datetime.fromisoformat(datestring)
+
+    df = pd.DataFrame(data=[{'a': 1, 'b': 2, 'c': 'AAA'},
+                            {'a': 4, 'b': 5, 'c': 'BBB'}])
+
+    key = f"{datestring}/{table}.pqt"
+
+    extract(client, conn, 'ingestion', table, time)
+
+    upload.assert_called_with(client, 'ingestion', key, SAME_DF(df))
+
+
+
 @mock_aws
 @patch('extractor.client')
 @patch("extractor.extract")
+@patch("extractor.get_last_updated_time")
 @patch("extractor.pg.Connection")
-def test_lambda_handler(conn, MockExtract, client):
+def test_lambda_handler(conn, get_last_updated_time, MockExtract, client):
     time = datetime.fromisoformat("2024-02-13T10:45:18+0000")
     connMock = Mock()
-
+    get_last_updated_time.return_value = "2024-01-01 00:00:00.000000"
     event = {
         'time': time
     }
@@ -143,7 +190,7 @@ def test_lambda_handler(conn, MockExtract, client):
     lambda_handler(event, context)
 
     MockExtract.assert_called_with(
-        's3', connMock, 'ingestion', 'example_table', time)
+        's3', connMock, 'ingestion', 'example_table', time, "2024-01-01 00:00:00.000000")
 
 
 @mock_aws
