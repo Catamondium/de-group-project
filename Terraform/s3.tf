@@ -1,5 +1,6 @@
 resource "aws_s3_bucket" "rannoch-s3-ingestion-bucket"{
-    bucket = "${var.bucket_name}ingestion-bucket"
+    bucket = "${var.bucket_name}ingestion-bucket2"
+    force_destroy = true
 }
 
 resource "aws_s3_object" "lambda_code" {
@@ -21,12 +22,13 @@ resource "aws_s3_bucket_versioning" "versioning_example" {
 }
 
 # this will not run if versioning is disabled
+# have to do another terraform apply to ensure retention
 resource "aws_s3_bucket_object_lock_configuration" "example" {
   bucket = aws_s3_bucket.rannoch-s3-ingestion-bucket.id
 
   rule {
     default_retention {
-      mode = "COMPLIANCE"
+      mode = "GOVERNANCE"
       days = 5
     }
   }
