@@ -114,7 +114,7 @@ def extract(client,
     if last_successful_update_time is None:
         query = f"SELECT * FROM {table}"
     else:
-        query = queries['design']
+        query = queries[table]
 
     # print(query, "::::::::::::::::::::::::::::::::")
     rows = conn.run(query)
