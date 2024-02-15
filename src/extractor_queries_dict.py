@@ -135,20 +135,62 @@ def get_query(table, last_successful_update_time):
             SELECT * FROM staff
             WHERE last_updated >= '{last_successful_update_time}';''',
 
-            # todo counterparty
             "counterparty": f'''
-            SELECT * FROM counterparty
-            WHERE last_updated >= '{last_successful_update_time}';''',
+            SELECT DISTINCT co.*
+            FROM counterparty co
+            LEFT JOIN payment pa
+                ON co.counterparty_id = pa.counterparty_id
+            WHERE co.last_updated >= '{last_successful_update_time}'
+                OR pa.last_updated >= '{last_successful_update_time}'
+            UNION
+            SELECT DISTINCT co.*
+            FROM counterparty co
+            INNER JOIN purchase_order po
+                ON co.counterparty_id = po.counterparty_id
+            INNER JOIN transaction t
+                ON po.purchase_order_id = t.purchase_order_id
+            INNER JOIN payment pa
+                ON t.transaction_id = pa.transaction_id
+            WHERE co.last_updated >= '{last_successful_update_time}'
+                OR po.last_updated >= '{last_successful_update_time}'
+                OR t.last_updated >= '{last_successful_update_time}'
+                OR pa.last_updated >= '{last_successful_update_time}'
+            UNION
+            SELECT DISTINCT co.*
+            FROM counterparty co
+            INNER JOIN sales_order so
+                ON co.counterparty_id = so.counterparty_id
+            INNER JOIN transaction t
+                ON so.sales_order_id = t.purchase_order_id
+            INNER JOIN payment pa
+                ON t.transaction_id = pa.transaction_id
+            WHERE co.last_updated >= '{last_successful_update_time}'
+                OR so.last_updated >= '{last_successful_update_time}'
+                OR t.last_updated >= '{last_successful_update_time}'
+                OR pa.last_updated >= '{last_successful_update_time}';''',
 
             # todo purchase_order
             "purchase_order": f'''
-            SELECT * FROM purchase_order
-            WHERE last_updated >= '{last_successful_update_time}';''',
+            SELECT DISTINCT po.*
+            FROM purchase_order po
+            LEFT JOIN transaction t
+                ON po.purchase_order_id = t.purchase_order_id
+            LEFT JOIN payment pa
+                ON t.transaction_id = pa.transaction_id
+            WHERE po.last_updated >= '{last_successful_update_time}'
+                OR t.last_updated >= '{last_successful_update_time}'
+                OR pa.last_updated >= '{last_successful_update_time}';''',
 
-            # todo sales_order
             "sales_order": f'''
-            SELECT * FROM sales_order
-            WHERE last_updated >= '{last_successful_update_time}';''',
+            SELECT DISTINCT so.*
+            FROM sales_order so
+            LEFT JOIN transaction t
+                ON so.sales_order_id = t.sales_order_id
+            LEFT JOIN payment pa
+                ON t.transaction_id = pa.transaction_id
+            WHERE so.last_updated >= '{last_successful_update_time}'
+                OR t.last_updated >= '{last_successful_update_time}'
+                OR pa.last_updated >= '{last_successful_update_time}';''',
 
             # default
             "default": f'''
