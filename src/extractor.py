@@ -21,34 +21,39 @@ TABLES = ["currency",
           "sales_order"]
 
 
-def extract(client, conn: pg.Connection, bucket, table, time, last_successful_update_time=None):
+def extract(client,
+            conn: pg.Connection,
+            bucket,
+            table,
+            time,
+            last_successful_update_time=None):
 
     # design: [ "sales_order": "desing_id" ]
 
-    # WITH des_ids as (SELECT desing_id FROM sasales_order WHERE last_updated > {last_successful_update_time})
+    # WITH des_ids as (SELECT desing_id
+    # FROM sasales_order
+    # WHERE last_updated > {last_successful_update_time})
     # SELECT * FROM design WHERE design_id in des_ids
 
     ##############################################################
-    ######## QUERIES
+    # QUERIES
     # design
-    queries = {"design": f'''SELECT DISTINCT * FROM 
-    (
-        (SELECT * FROM design WHERE last_updated > '{last_successful_update_time}')
+    queries = {"design": f'''
+        SELECT * FROM design
+        WHERE last_updated > '{last_successful_update_time}'
         UNION
-        (SELECT * FROM design
-        WHERE design_id IN (
-        SELECT design_id FROM sales_order WHERE last_updated > '{last_successful_update_time}'))
-    ) design;''', }
-
+        SELECT d.* FROM design d
+        INNER JOIN sales_order so ON d.design_id = so.design_id
+        WHERE so.last_updated > '{last_successful_update_time}';'''}
 
     if table == 'design':
-        if last_successful_update_time == None:
+        if last_successful_update_time is None:
             query = f"SELECT * FROM {table}"
         else:
             query = queries['design']
     else:
         query = f"SELECT * FROM {table}"
-    print(query, "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+    print(query, "::::::::::::::::::::::::::::::::")
     rows = conn.run(query)
     data = rows_to_dict(rows, conn.columns)
     df = pd.DataFrame(data=data)
@@ -111,9 +116,10 @@ def rows_to_dict(items, columns):
 
 
 def get_last_updated_time():
-    s3 = client('s3')
-    bucket = environ.get('S3_CONTROL_BUCKET', 'control_bucket')
-    content = s3.get_object(Bucket=bucket, Key='last_successfil_transformation.json')
+    # s3 = client('s3')
+    # bucket = environ.get('S3_CONTROL_BUCKET', 'control_bucket')
+    # content = s3.get_object(Bucket=bucket,
+    # Key='last_successfil_transformation.json')
     #
     # get  transform  upload
     # 2024-01-01 00:00:00.000000

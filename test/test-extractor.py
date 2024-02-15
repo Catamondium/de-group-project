@@ -99,6 +99,7 @@ def test_upload_parquet(s3):
 
     assert key in files
 
+
 # extract()
 @patch("extractor.upload_parquet")
 def test_extract(upload):
@@ -145,6 +146,7 @@ def test_extract_with_mod_queries(upload):
 
     upload.assert_called_with(client, 'ingestion', key, SAME_DF(df))
 
+
 @patch("extractor.upload_parquet")
 def test_extract_with_mod_queries_plus_last_updated_time(upload):
     client = 's3'
@@ -168,7 +170,6 @@ def test_extract_with_mod_queries_plus_last_updated_time(upload):
     upload.assert_called_with(client, 'ingestion', key, SAME_DF(df))
 
 
-
 @mock_aws
 @patch('extractor.client')
 @patch("extractor.extract")
@@ -190,7 +191,9 @@ def test_lambda_handler(conn, get_last_updated_time, MockExtract, client):
     lambda_handler(event, context)
 
     MockExtract.assert_called_with(
-        's3', connMock, 'ingestion', 'example_table', time, "2024-01-01 00:00:00.000000")
+        's3', connMock, 'ingestion',
+        'example_table', time,
+        "2024-01-01 00:00:00.000000")
 
 
 @mock_aws
