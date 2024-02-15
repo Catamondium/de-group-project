@@ -1,6 +1,7 @@
 import pandas as pd
 import logging
 from os import environ
+from datetime import datetime
 import pg8000.native as pg
 from boto3 import client
 
@@ -23,6 +24,7 @@ TABLES = ["currency",
 
 
 def extract(client, conn: pg.Connection, bucket, table, time):
+    logger.info(f'extracting {table}')
     rows = conn.run(f"SELECT * FROM {table}")
     data = rows_to_dict(rows, conn.columns)
     print(data)
@@ -34,7 +36,7 @@ def extract(client, conn: pg.Connection, bucket, table, time):
 
 def lambda_handler(event, context):
     try:
-        time = event['time']
+        time = datetime.strptime(event['time'],"%Y-%m-%dT%H:%M:%SZ")
 
         username = environ.get('PGUSER', 'testing')
         password = environ.get('PGPASSWORD', 'testing')
@@ -67,7 +69,9 @@ def lambda_handler(event, context):
 
         for table in tables:
             extract(s3, connection, bucket, table, time)
+
     except Exception as e:
+        logger.info("an error has occurred")
         logger.error(e)
 
 

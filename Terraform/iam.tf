@@ -21,9 +21,16 @@ resource "aws_iam_role" "extraction_lambda_role" {
 
 # policy and roles for the put s3 document
 data "aws_iam_policy_document" "put_s3_document" {
-  statement {
-    actions = ["s3:PutObjectRetention"]
+#   statement {
+#     actions = ["s3:PutObject", "s3:ListObject", "s3:GetObject"]
+#     resources = [
+#       "${aws_s3_bucket.rannoch-s3-ingestion-bucket.arn}"
+#     ]
+#   }
+statement {
+    actions = ["s3:PutObject", "s3:ListBucket", "s3:GetObject"]
     resources = [
+      "${aws_s3_bucket.rannoch-s3-ingestion-bucket.arn}/*",
       "${aws_s3_bucket.rannoch-s3-ingestion-bucket.arn}"
     ]
   }
@@ -37,7 +44,6 @@ data "aws_iam_policy_document" "cw_document" {
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
     ]
   }
-
   statement {
     actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
 
