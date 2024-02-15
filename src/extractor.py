@@ -53,7 +53,7 @@ def extract(client,
             query = queries['design']
     else:
         query = f"SELECT * FROM {table}"
-    print(query, "::::::::::::::::::::::::::::::::")
+    # print(query, "::::::::::::::::::::::::::::::::")
     rows = conn.run(query)
     data = rows_to_dict(rows, conn.columns)
     df = pd.DataFrame(data=data)
@@ -116,12 +116,15 @@ def rows_to_dict(items, columns):
 
 
 def get_last_updated_time():
-    # s3 = client('s3')
-    # bucket = environ.get('S3_CONTROL_BUCKET', 'control_bucket')
-    # content = s3.get_object(Bucket=bucket,
-    # Key='last_successfil_transformation.json')
-    #
-    # get  transform  upload
-    # 2024-01-01 00:00:00.000000
+    s3 = client('s3')
+    bucket = environ.get('S3_CONTROL_BUCKET', 'control_bucket')
 
-    return "2024-01-01 00:00:00.000000"
+    try:
+        content = s3.get_object(Bucket=bucket,
+                                Key='last_successful_transformation.txt')
+        last_updated_time = content['Body'].read().decode('utf-8').strip()
+        return last_updated_time
+    except Exception as e:
+        print(f"Error retrieving data from S3: {e}")
+        #
+        return None
