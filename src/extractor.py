@@ -160,6 +160,9 @@ def lambda_handler(event, context):
 
         for table in tables:
             extract(s3, connection, bucket, table, time, last_updated_time)
+
+        write_current_time(time)
+
     except Exception as e:
         logger.error(e)
 
@@ -192,3 +195,16 @@ def get_last_updated_time():
         print(f"Error retrieving data from S3: {e}")
         #
         return None
+
+
+def write_current_time(current_time):
+    s3 = client('s3')
+    bucket = environ.get('S3_CONTROL_BUCKET', 'control_bucket')
+
+    try:
+        s3.put_object(Bucket=bucket,
+                      Key='last_successful_extraction.txt',
+                      Body=current_time)
+        # print("time successfully written")
+    except Exception as e:
+        print(f"Error writing data to S3: {e}")
