@@ -21,7 +21,9 @@ SITE_PACKAGES=$(VENV)/lib/*/site-packages/
 PSQL_ENV=.env.ini
 
 ## Run all checks
-run-checks: $(SITE_PACKAGES) run-security run-flake unit-tests
+run-checks: $(SITE_PACKAGES) run-security run-flake notices unit-tests
+
+notices: unfrozen
 
 ## Create python interpreter environment.
 $(VENV):
@@ -38,6 +40,9 @@ $(VENV):
 
 $(SITE_PACKAGES) : requirements.txt
 	$(call execute_in_env, $(PIP) install -r requirements.txt)
+
+unfrozen:
+	@$(call execute_in_env, ./scripts/unfrozen.sh)
 
 # Define utility variable to help calling Python from the virtual environment
 ACTIVATE_ENV := source venv/bin/activate
