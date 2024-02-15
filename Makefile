@@ -22,7 +22,7 @@ VENV=venv
 run-checks: ensure-fresh run-security run-flake unit-tests
 
 ## Create python interpreter environment.
-create-environment:
+$(VENV)/lib/*/site-packages/:
 	@echo ">>> About to create environment: $(PROJECT_NAME)..."
 	@echo ">>> check python3 version"
 	( \
@@ -38,6 +38,8 @@ ensure-fresh:
 		@$(call execute_in_env, $(PIP) install -r requirements.txt > /dev/null)
 
 
+requirements.txt: $(VENV)/lib/*/site-packages/
+	$(call execute_in_env, $(PIP) freeze > requirements.txt)
 
 requirements : requirements.txt
 	$(call execute_in_env, $(PIP) install -r requirements.txt)
