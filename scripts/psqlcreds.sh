@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
-USERS=($(echo "select usename from pg_user" | psql))
-USER=${USERS[3]}
+USERS=($(echo "select current_user;" | psql))
+USER=${USERS[2]}
 
 PGPASS=$(cat ~/.pgpass)
 PASS=${PGPASS##*:}

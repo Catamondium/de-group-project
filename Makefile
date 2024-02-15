@@ -37,7 +37,7 @@ $(VENV):
 	)
 
 $(SITE_PACKAGES) : requirements.txt
-	$(call execute_in_env, $(PIP) install -r requirements.txt
+	$(call execute_in_env, $(PIP) install -r requirements.txt)
 
 # Define utility variable to help calling Python from the virtual environment
 ACTIVATE_ENV := source venv/bin/activate
