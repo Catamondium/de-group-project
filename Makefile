@@ -18,6 +18,7 @@ PYTHONPATH=./src
 TRACK=.make_trackers
 VENV=venv
 SITE_PACKAGES=$(VENV)/lib/*/site-packages/
+PSQL_ENV=.env.ini
 
 ## Run all checks
 run-checks: $(SITE_PACKAGES) run-security run-flake unit-tests
@@ -49,10 +50,10 @@ endef
 ################################################################################################################
 # Set Up
 ## local testing database
-init-db:
+init-db: $(PSQL_ENV)
 	# Why does make have to parse like this?
-	if [[ ! -f .env.ini ]]; then \
-		echo -e "[DEFAULT]\nPGUSER=\nPGPASSWORD=\n" > .env.ini; \
+	if [[ ! -f $(PSQL_ENV) ]]; then \
+		./scripts/psqlcreds.sh $(PSQL_ENV) ;\
 	fi;
 	psql -f ./test/test_extract_db/subset_test_db.sql
 
@@ -60,6 +61,7 @@ init-db:
 dev-setup: requirements init-db
 	$(call execute_in_env, $(PIP) install flake8)
 	$(call execute_in_env, $(PIP) install pytest)
+	$(call execute_in_env, $(PIP) install pytest-cov)
 	$(call execute_in_env, $(PIP) install bandit)
 	$(call execute_in_env, $(PIP) install safety)
 	ln -sf $(realpath pre-commit.sh) .git/hooks/pre-commit
