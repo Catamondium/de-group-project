@@ -17,12 +17,13 @@ PYTEST_COV = --cov=src --cov-fail-under=90 --no-cov-on-fail --cov-report=term-mi
 PYTHONPATH=./src
 TRACK=make_trackers
 VENV=venv
+SITE_PACKAGES=$(VENV)/lib/*/site-packages/
 
 ## Run all checks
-run-checks: ensure-fresh run-security run-flake unit-tests
+run-checks: run-security run-flake unit-tests
 
 ## Create python interpreter environment.
-$(VENV)/lib/*/site-packages/:
+$(VENV):
 	@echo ">>> About to create environment: $(PROJECT_NAME)..."
 	@echo ">>> check python3 version"
 	( \
@@ -34,16 +35,9 @@ $(VENV)/lib/*/site-packages/:
 	    $(PYTHON_INTERPRETER) -m venv $(VENV); \
 	)
 
-ensure-fresh:
-		@$(call execute_in_env, $(PIP) install -r requirements.txt > /dev/null)
-
-
-requirements.txt: $(VENV)/lib/*/site-packages/
-	$(call execute_in_env, $(PIP) freeze > requirements.txt)
-
-requirements : requirements.txt
+$(SITE_PACKAGES) $(TRACK)/packages : requirements.txt
 	$(call execute_in_env, $(PIP) install -r requirements.txt)
-
+	touch $(TRACK)/packages
 
 # Define utility variable to help calling Python from the virtual environment
 ACTIVATE_ENV := source venv/bin/activate
