@@ -90,3 +90,9 @@ unit-tests:
 run-security: run-bandit $(TRACK)/safety
 
 init: $(VENV) $(SITE_PACKAGES) dev-setup init-db
+
+clean:
+	@echo "erasing setup"
+	rm -drf $(VENV)
+	rm .env.ini
+	echo "drop database totesys_test_subset" | psql
