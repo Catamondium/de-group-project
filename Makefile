@@ -15,7 +15,7 @@ PIP:=pip
 PYTEST_OPTS = -vvvv
 PYTEST_COV = --cov=src --cov-fail-under=90 --no-cov-on-fail --cov-report=term-missing
 PYTHONPATH=./src
-TRACK=make_trackers
+TRACK=.make_trackers
 VENV=venv
 SITE_PACKAGES=$(VENV)/lib/*/site-packages/
 
