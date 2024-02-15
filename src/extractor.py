@@ -27,7 +27,6 @@ def extract(client,
             table,
             time,
             last_successful_update_time=None):
-
     # design: [ "sales_order": "desing_id" ]
 
     # WITH des_ids as (SELECT desing_id
@@ -38,22 +37,36 @@ def extract(client,
     ##############################################################
     # QUERIES
     # design
-    queries = {"design": f'''
+    queries = {
+        # todo: fix
+        "design": f'''
         SELECT * FROM design
         WHERE last_updated > '{last_successful_update_time}'
         UNION
         SELECT d.* FROM design d
         INNER JOIN sales_order so ON d.design_id = so.design_id
         WHERE so.last_updated > '{last_successful_update_time}';''',
-               # payment_type
-               "payment_type": f'''
+
+        "payment_type": f'''
         SELECT * FROM payment_type
         WHERE last_updated > '{last_successful_update_time}'
         UNION
         SELECT pt.* FROM payment_type pt
         INNER JOIN payment p ON pt.payment_type_id = p.payment_type_id
-        WHERE p.last_updated > '{last_successful_update_time}';'''
-               }
+        WHERE p.last_updated > '{last_successful_update_time}';''',
+
+        "payment": f'''
+        SELECT * FROM payment
+        WHERE last_updated > '{last_successful_update_time}';''',
+        # "currency": '',
+        # "department": '',
+        # "transaction": '',
+        # "address": '',
+        # "staff": '',
+        # "counterparty": '',
+        # "purchase_order": '',
+        # "sales_order": '',
+    }
 
     if table == 'design':
         if last_successful_update_time is None:
