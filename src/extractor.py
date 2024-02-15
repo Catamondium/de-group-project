@@ -44,7 +44,16 @@ def extract(client,
         UNION
         SELECT d.* FROM design d
         INNER JOIN sales_order so ON d.design_id = so.design_id
-        WHERE so.last_updated > '{last_successful_update_time}';'''}
+        WHERE so.last_updated > '{last_successful_update_time}';''',
+               # payment_type
+               "payment_type": f'''
+        SELECT * FROM payment_type
+        WHERE last_updated > '{last_successful_update_time}'
+        UNION
+        SELECT pt.* FROM payment_type pt
+        INNER JOIN payment p ON pt.payment_type_id = p.payment_type_id
+        WHERE p.last_updated > '{last_successful_update_time}';'''
+               }
 
     if table == 'design':
         if last_successful_update_time is None:
@@ -77,6 +86,7 @@ def lambda_handler(event, context):
             database=database)
 
         last_updated_time = get_last_updated_time()
+        # todo: add error handler if last_updated_time = None ???
 
         s3 = client('s3')
         bucket = environ.get('S3_EXTRACT_BUCKET', 'ingestion')
