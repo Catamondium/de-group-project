@@ -16,12 +16,18 @@ def get_query(table, last_successful_update_time):
     queries = {
             # todo: fix
             "design": f'''
-            SELECT * FROM design
-            WHERE last_updated > '{last_successful_update_time}'
-            UNION
-            SELECT d.* FROM design d
-            INNER JOIN sales_order so ON d.design_id = so.design_id
-            WHERE so.last_updated > '{last_successful_update_time}';''',
+            SELECT DISTINCT de.*
+            FROM design de
+            INNER JOIN sales_order so
+                ON de.design_id = so.design_id
+            INNER JOIN transaction t
+                ON so.sales_order_id = t.purchase_order_id
+            INNER JOIN payment pa
+                ON t.transaction_id = pa.transaction_id
+            WHERE de.last_updated >= '{last_successful_update_time}'
+                OR so.last_updated >= '{last_successful_update_time}'
+                OR t.last_updated >= '{last_successful_update_time}'
+                OR pa.last_updated >= '{last_successful_update_time}';''',
 
             "payment_type": f'''
             SELECT * FROM payment_type
