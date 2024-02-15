@@ -62,7 +62,9 @@ def lambda_handler(event, context):
                     AND tablename NOT LIKE '\_%';
                     """)
 
+
         assert rows is not None
+
 
         tables = [item[0] for item in rows]
 

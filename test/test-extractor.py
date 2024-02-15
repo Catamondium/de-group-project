@@ -4,8 +4,11 @@ import pandas as pd
 from unittest.mock import Mock, patch
 import boto3
 from datetime import datetime
+from configparser import ConfigParser
 import pytest
+from io import BytesIO
 import os
+from sample_datasets import sample_dataset
 
 
 class SAME_DF:
@@ -44,6 +47,20 @@ class TestRowstoDict:
         actual = rows_to_dict(items, columns)
 
         assert actual == expected
+
+
+@pytest.fixture(scope='function')
+def mockdb_creds():
+    """Mocked AWS Credentials for moto."""
+
+    config = ConfigParser()
+    config.read('.env.ini')
+    section = config['DEFAULT']
+
+    os.environ['PGUSER'] = section['PGUSER']
+    os.environ['PGPASSWORD'] = section['PGPASSWORD']
+    os.environ['PGHOST'] = "127.0.0.1"
+    os.environ['PGDATABASE'] = "totesys_test_subset"
 
 
 @pytest.fixture(scope='function')
@@ -127,3 +144,46 @@ def test_lambda_handler(conn, MockExtract, client):
 
     MockExtract.assert_called_with(
         's3', connMock, 'ingestion', 'example_table', time)
+
+
+@mock_aws
+def test_integrate(s3, mockdb_creds):
+    TABLES = ["currency",
+              "payment",
+              "department",
+              "transaction",
+              "design",
+              "address",
+              "staff",
+              "counterparty",
+              "purchase_order",
+              "payment_type",
+              "sales_order"]
+    event = {'time': datetime.fromisoformat("2024-02-13T10:45:18")}
+
+    # ACT
+    s3.create_bucket(
+        Bucket='ingestion',
+        CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+
+    lambda_handler(event, '')
+
+    objects = s3.list_objects_v2(Bucket='ingestion')
+    files = [file['Key'] for file in objects['Contents']]
+
+    assert len(files) == 11
+
+    for table in TABLES:
+        expected_file_name = f'2024-02-13T10:45:18/{table}.pqt'
+        assert expected_file_name in files
+
+        expected_table = sample_dataset[table]
+        # print(expected_table[0], table, '-------------------------------')
+
+        resp = s3.get_object(Bucket='ingestion',
+                             Key=f"2024-02-13T10:45:18/{table}.pqt")
+        df = pd.read_parquet(BytesIO(resp['Body'].read()))
+        existing_table = df.to_records()
+
+        for i, row in enumerate(existing_table):
+            assert len(row) == len(expected_table[i]) + 1
