@@ -26,7 +26,7 @@ TABLES = ["currency",
 def extract(client, conn: pg.Connection, bucket, table, time):
     logger.info(f'extracting {table}')
     last_updated = environ.get("PG_LAST_UPDATED", None)
-    sql = f"SELECT * FROM {table} WHERE created_at > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS') AND last_updated > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS')"
+    sql = f"SELECT * FROM {table} WHERE created_at > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS') OR last_updated > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS')"
     #logger.info(sql)
     rows = conn.run(sql)
     data = rows_to_dict(rows, conn.columns)
