@@ -21,6 +21,7 @@ resource "aws_lambda_function" "extraction_lambda" {
       PGHOST = "${var.host}"
       PGPORT = "${var.port}"
       PGDATABASE = "${var.database}"
+      PG_LAST_UPDATED = "2000-01-01 00:00:00"
     }
   }
 }

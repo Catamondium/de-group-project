@@ -25,9 +25,12 @@ TABLES = ["currency",
 
 def extract(client, conn: pg.Connection, bucket, table, time):
     logger.info(f'extracting {table}')
-    rows = conn.run(f"SELECT * FROM {table}")
+    last_updated = environ.get("PG_LAST_UPDATED", None)
+    sql = f"SELECT * FROM {table} WHERE created_at > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS') AND last_updated > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS')"
+    #logger.info(sql)
+    rows = conn.run(sql)
     data = rows_to_dict(rows, conn.columns)
-    print(data)
+    #print(data)
     df = pd.DataFrame(data=data)
     key = f"{time.isoformat()}/{table}.pqt"
     logger.info(f'output key is {key}')
@@ -69,7 +72,7 @@ def lambda_handler(event, context):
 
         for table in tables:
             extract(s3, connection, bucket, table, time)
-
+        environ["PG_LAST_UPDATED"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     except Exception as e:
         logger.info("an error has occurred")
         logger.error(e)
