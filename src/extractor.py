@@ -58,7 +58,26 @@ def extract(client,
         "payment": f'''
         SELECT * FROM payment
         WHERE last_updated > '{last_successful_update_time}';''',
-        # "currency": '',
+
+        "currency": f'''
+        SELECT * FROM currency
+        WHERE last_updated >= '{last_successful_update_time}'
+        UNION
+        SELECT * FROM currency WHERE currency_id in
+        (SELECT currency_id
+        FROM payment
+        WHERE last_updated >= '{last_successful_update_time}')
+        UNION
+        (SELECT DISTINCT c.* FROM currency c
+        INNER JOIN purchase_order po ON c.currency_id = po.currency_id
+        INNER JOIN transaction t ON po.purchase_order_id = t.purchase_order_id
+        WHERE T.created_at > '{last_successful_update_time}')
+        UNION
+        (SELECT DISTINCT c.* FROM currency c
+        INNER JOIN sales_order co ON c.currency_id = co.currency_id
+        INNER JOIN transaction t ON co.sales_order_id = t.sales_order_id
+        WHERE T.created_at > '{last_successful_update_time}');''',
+
         # "department": '',
         # "transaction": '',
         # "address": '',
