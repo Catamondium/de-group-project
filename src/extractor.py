@@ -27,20 +27,18 @@ def extract(client, conn: pg.Connection, bucket, table, time):
     logger.info(f'extracting {table}')
     last_updated = environ.get("PG_LAST_UPDATED", None)
     sql = f"SELECT * FROM {table} WHERE created_at > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS') OR last_updated > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS')"
-    #logger.info(sql)
     rows = conn.run(sql)
-    data = rows_to_dict(rows, conn.columns)
-    #print(data)
-    df = pd.DataFrame(data=data)
-    key = f"{time.isoformat()}/{table}.pqt"
-    logger.info(f'output key is {key}')
-    upload_parquet(client, bucket, key, df)
+    if len(rows) > 0: 
+        data = rows_to_dict(rows, conn.columns)
+        df = pd.DataFrame(data=data)
+        key = f"{time.isoformat()}/{table}.pqt"
+        logger.info(f'output key is {key}')
+        upload_parquet(client, bucket, key, df)
 
 
 def lambda_handler(event, context):
     try:
         time = datetime.strptime(event['time'],"%Y-%m-%dT%H:%M:%SZ")
-
         username = environ.get('PGUSER', 'testing')
         password = environ.get('PGPASSWORD', 'testing')
         host = environ.get('PGHOST', 'testing')
@@ -65,8 +63,6 @@ def lambda_handler(event, context):
                     """)
 
         assert rows is not None
-
-        print(rows)
 
         tables = [item[0] for item in rows]
 
