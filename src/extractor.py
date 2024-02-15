@@ -78,22 +78,44 @@ def extract(client,
         INNER JOIN transaction t ON co.sales_order_id = t.sales_order_id
         WHERE T.created_at > '{last_successful_update_time}');''',
 
-        # "department": '',
-        # "transaction": '',
-        # "address": '',
-        # "staff": '',
-        # "counterparty": '',
-        # "purchase_order": '',
-        # "sales_order": '',
+        # todo dep
+        "department": f'''
+        SELECT * FROM department
+        WHERE last_updated >= '{last_successful_update_time}';''',
+
+        # todo  transaction
+        "transaction": f'''
+        SELECT * FROM transaction
+        WHERE last_updated >= '{last_successful_update_time}';''',
+
+        # todo addr
+        "address": f'''
+        SELECT * FROM address
+        WHERE last_updated >= '{last_successful_update_time}';''',
+
+        # todo staff
+        "staff": f'''
+        SELECT * FROM staff
+        WHERE last_updated >= '{last_successful_update_time}';''',
+
+        "counterparty": f'''
+        SELECT * FROM counterparty
+        WHERE last_updated >= '{last_successful_update_time}';''',
+
+        "purchase_order": f'''
+        SELECT * FROM purchase_order
+        WHERE last_updated >= '{last_successful_update_time}';''',
+
+        "sales_order": f'''
+        SELECT * FROM sales_order
+        WHERE last_updated >= '{last_successful_update_time}';''',
     }
 
-    if table == 'design':
-        if last_successful_update_time is None:
-            query = f"SELECT * FROM {table}"
-        else:
-            query = queries['design']
-    else:
+    if last_successful_update_time is None:
         query = f"SELECT * FROM {table}"
+    else:
+        query = queries['design']
+
     # print(query, "::::::::::::::::::::::::::::::::")
     rows = conn.run(query)
     data = rows_to_dict(rows, conn.columns)
