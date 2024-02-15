@@ -20,7 +20,7 @@ VENV=venv
 SITE_PACKAGES=$(VENV)/lib/*/site-packages/
 
 ## Run all checks
-run-checks: run-security run-flake unit-tests
+run-checks: $(SITE_PACKAGES) run-security run-flake unit-tests
 
 ## Create python interpreter environment.
 $(VENV):
@@ -35,9 +35,8 @@ $(VENV):
 	    $(PYTHON_INTERPRETER) -m venv $(VENV); \
 	)
 
-$(SITE_PACKAGES) $(TRACK)/packages : requirements.txt
-	$(call execute_in_env, $(PIP) install -r requirements.txt)
-	touch $(TRACK)/packages
+$(SITE_PACKAGES) : requirements.txt
+	$(call execute_in_env, $(PIP) install -r requirements.txt
 
 # Define utility variable to help calling Python from the virtual environment
 ACTIVATE_ENV := source venv/bin/activate
@@ -63,7 +62,6 @@ dev-setup: requirements init-db
 	$(call execute_in_env, $(PIP) install pytest)
 	$(call execute_in_env, $(PIP) install bandit)
 	$(call execute_in_env, $(PIP) install safety)
-	$(call execute_in_env, $(PIP) freeze > requirements.txt)
 	ln -sf $(realpath pre-commit.sh) .git/hooks/pre-commit
 
 
