@@ -9,6 +9,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+make_trackers
 # C extensions
 *.so
 

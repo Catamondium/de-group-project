@@ -13,7 +13,13 @@ SHELL := /bin/bash
 PROFILE = default
 PIP:=pip
 PYTEST_OPTS = -vvvv
+PYTEST_COV = --cov=src --cov-fail-under=90 --no-cov-on-fail --cov-report=term-missing
 PYTHONPATH=./src
+TRACK=make_trackers
+VENV=venv
+
+## Run all checks
+run-checks: ensure-fresh run-security run-flake unit-tests
 
 ## Create python interpreter environment.
 create-environment:
@@ -25,12 +31,16 @@ create-environment:
 	@echo ">>> Setting up VirtualEnv."
 	( \
 	    $(PIP) install -q virtualenv virtualenvwrapper; \
-	    $(PYTHON_INTERPRETER) -m venv venv; \
+	    $(PYTHON_INTERPRETER) -m venv $(VENV); \
 	)
 
-requirements: venv requirements.txt
+ensure-fresh:
+		@$(call execute_in_env, $(PIP) install -r requirements.txt > /dev/null)
+
+
+
+requirements : requirements.txt
 	$(call execute_in_env, $(PIP) install -r requirements.txt)
-	ln -sf $(realpath pre-commit.sh) .git/hooks/pre-commit
 
 
 # Define utility variable to help calling Python from the virtual environment
@@ -46,28 +56,20 @@ endef
 ## local testing database
 init-db:
 	# Why does make have to parse like this?
-	if [[ ! -f .env.ini ]]; then\
-		echo -e "[DEFAULT]\nPGUSER=\nPGPASSWORD=\n" > .env.ini;\
+	if [[ ! -f .env.ini ]]; then \
+		echo -e "[DEFAULT]\nPGUSER=\nPGPASSWORD=\n" > .env.ini; \
 	fi;
 	psql -f ./test/test_extract_db/subset_test_db.sql
 
 ## Install flake8
-flake:
+dev-setup: requirements init-db
 	$(call execute_in_env, $(PIP) install flake8)
-
-## Install pytest
-pytest:
 	$(call execute_in_env, $(PIP) install pytest)
-
-## Install pytest
-bandit:
 	$(call execute_in_env, $(PIP) install bandit)
-
-## Install pytest
-safety:
 	$(call execute_in_env, $(PIP) install safety)
+	$(call execute_in_env, $(PIP) freeze > requirements.txt)
+	ln -sf $(realpath pre-commit.sh) .git/hooks/pre-commit
 
-dev-setup: bandit safety pytest flake requirements
 
 ## Run the flake8 code check
 run-flake:
@@ -76,16 +78,14 @@ run-flake:
 run-bandit:
 	$(call execute_in_env, bandit -lll */*.py *c/*/*.py)
 
-run-safety: requirements.txt
+$(TRACK)/safety : requirements.txt
 	$(call execute_in_env, safety check -r ./requirements.txt)
+	touch $(TRACK)/safety
 
 ## Run all the unit tests
 unit-tests:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest ${PYTEST_OPTS} test/*.py)
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest ${PYTEST_OPTS} ${PYTEST_COV} test/*.py)
 
-run-security: run-bandit run-safety
-
-## Run all checks
-run-checks: run-security run-flake unit-tests
+run-security: run-bandit $(TRACK)/safety
 
 init: create-environment requirements init-db
