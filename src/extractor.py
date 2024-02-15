@@ -3,22 +3,10 @@ import logging
 from os import environ
 import pg8000.native as pg
 from boto3 import client
+from extractor_queries_dict import get_query  # ,TABLES
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
-
-# anticipated table structure
-TABLES = ["currency",
-          "payment",
-          "department",
-          "transaction",
-          "design",
-          "address",
-          "staff",
-          "counterparty",
-          "purchase_order",
-          "payment_type",
-          "sales_order"]
 
 
 def extract(client,
@@ -27,94 +15,12 @@ def extract(client,
             table,
             time,
             last_successful_update_time=None):
-    # design: [ "sales_order": "desing_id" ]
 
-    # WITH des_ids as (SELECT desing_id
-    # FROM sasales_order
-    # WHERE last_updated > {last_successful_update_time})
-    # SELECT * FROM design WHERE design_id in des_ids
-
-    ##############################################################
-    # QUERIES
-    # design
-    queries = {
-        # todo: fix
-        "design": f'''
-        SELECT * FROM design
-        WHERE last_updated > '{last_successful_update_time}'
-        UNION
-        SELECT d.* FROM design d
-        INNER JOIN sales_order so ON d.design_id = so.design_id
-        WHERE so.last_updated > '{last_successful_update_time}';''',
-
-        "payment_type": f'''
-        SELECT * FROM payment_type
-        WHERE last_updated > '{last_successful_update_time}'
-        UNION
-        SELECT pt.* FROM payment_type pt
-        INNER JOIN payment p ON pt.payment_type_id = p.payment_type_id
-        WHERE p.last_updated > '{last_successful_update_time}';''',
-
-        "payment": f'''
-        SELECT * FROM payment
-        WHERE last_updated > '{last_successful_update_time}';''',
-
-        "currency": f'''
-        SELECT * FROM currency
-        WHERE last_updated >= '{last_successful_update_time}'
-        UNION
-        SELECT * FROM currency WHERE currency_id in
-        (SELECT currency_id
-        FROM payment
-        WHERE last_updated >= '{last_successful_update_time}')
-        UNION
-        (SELECT DISTINCT c.* FROM currency c
-        INNER JOIN purchase_order po ON c.currency_id = po.currency_id
-        INNER JOIN transaction t ON po.purchase_order_id = t.purchase_order_id
-        WHERE T.created_at > '{last_successful_update_time}')
-        UNION
-        (SELECT DISTINCT c.* FROM currency c
-        INNER JOIN sales_order co ON c.currency_id = co.currency_id
-        INNER JOIN transaction t ON co.sales_order_id = t.sales_order_id
-        WHERE T.created_at > '{last_successful_update_time}');''',
-
-        # todo dep
-        "department": f'''
-        SELECT * FROM department
-        WHERE last_updated >= '{last_successful_update_time}';''',
-
-        # todo  transaction
-        "transaction": f'''
-        SELECT * FROM transaction
-        WHERE last_updated >= '{last_successful_update_time}';''',
-
-        # todo addr
-        "address": f'''
-        SELECT * FROM address
-        WHERE last_updated >= '{last_successful_update_time}';''',
-
-        # todo staff
-        "staff": f'''
-        SELECT * FROM staff
-        WHERE last_updated >= '{last_successful_update_time}';''',
-
-        "counterparty": f'''
-        SELECT * FROM counterparty
-        WHERE last_updated >= '{last_successful_update_time}';''',
-
-        "purchase_order": f'''
-        SELECT * FROM purchase_order
-        WHERE last_updated >= '{last_successful_update_time}';''',
-
-        "sales_order": f'''
-        SELECT * FROM sales_order
-        WHERE last_updated >= '{last_successful_update_time}';''',
-    }
-
+    # todo
     if last_successful_update_time is None:
         query = f"SELECT * FROM {table}"
     else:
-        query = queries[table]
+        query = get_query(table, last_successful_update_time)
 
     # print(query, "::::::::::::::::::::::::::::::::")
     rows = conn.run(query)
