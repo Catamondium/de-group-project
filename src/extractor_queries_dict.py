@@ -12,7 +12,27 @@ TABLES = ["currency",
           "sales_order"]
 
 
-def get_query(table, last_successful_update_time):
+def get_query(table: str, last_successful_update_time: str) -> str:
+    """
+    Generates a SQL query string for a given table and the last
+    successful update time.
+
+    The function returns a SELECT query that fetches records from
+    the specified table which have been updated on or after the last
+    successful update time. It accounts for various relationships
+    between the 'table' and other related tables to fetch the updated
+    records. If the table name doesn't match any predefined tables,
+    it returns a default query.
+
+    Parameters:
+    - table (str): The name of the table for which the
+        query is to be generated.
+    - last_successful_update_time (str): The timestamp of the last
+        successful update in the format 'YYYY-MM-DD HH:MM:SS.ssssss'.
+
+    Returns:
+    - str: A SQL query string.
+    """
     queries = {
             "design": f'''
             SELECT DISTINCT de.*
