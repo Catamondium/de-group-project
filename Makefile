@@ -4,7 +4,6 @@
 #
 #################################################################################
 
-PROJECT_NAME = de-py-katas
 REGION = eu-west-2
 PYTHON_INTERPRETER = python3
 WD=$(shell pwd)
@@ -12,7 +11,7 @@ PYTHONPATH=".:./src:./test:./spikes"
 SHELL := /bin/bash
 PROFILE = default
 PIP:=pip
-PYTEST_OPTS = -vvvv -rP
+PYTEST_OPTS = -vvvv
 PYTEST_COV = --cov=src --cov-fail-under=90 --no-cov-on-fail --cov-report=term-missing
 TRACK=.make_trackers
 VENV=venv
@@ -95,7 +94,7 @@ $(TRACK)/safety : requirements.txt
 
 ## Run all the unit tests
 unit-tests:
-	$(call execute_in_env, PYTHONPATH="${PYTHONPATH}" pytest ${PYTEST_OPTS} ${PYTEST_COV} test/*.py)
+	$(call execute_in_env, PYTHONPATH="${PYTHONPATH}" pytest ${PYTEST_OPTS} ${PYTEST_COV} $(ARGS) test/*.py)
 
 run-security: run-bandit $(TRACK)/safety
 
