@@ -46,7 +46,7 @@ jobs:
   #         python-version: "3.11"
 
   #     - name: Setup venv
-  #       run: make init
+  #       run: make actions-init
 
   #     - name: Run tests
   #       run: make unit-tests
