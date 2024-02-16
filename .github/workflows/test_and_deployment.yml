@@ -25,7 +25,7 @@ jobs:
           python-version: "3.11"
 
       - name: Setup venv
-        run: make init
+        run: make actions-init
 
       - name: Run Security-Checks
         run: make security-test
