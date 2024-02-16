@@ -1,0 +1,28 @@
+name: Terraform Validate
+on:
+  - push
+  paths:
+    - 'Terraform/*.tf'
+    - 'Terraform/*.tf.json'
+
+jobs:
+  terraform-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-2
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Init
+        working-directory: Terraform
+        run: terraform init
+
+      - name: Run Validation
+        working-directory: Terraform
+        run: terraform validate
