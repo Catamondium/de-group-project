@@ -6,9 +6,6 @@ on:
 jobs:
   terraform-validate:
     runs-on: ubuntu-latest
-    steps:
-      - name: ECHO
-        run: printf '::%s::' "$CI"
       - name: Checkout Repo
         uses: actions/checkout@v4
       - name: Run Validation
