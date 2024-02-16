@@ -10,17 +10,19 @@ logger.setLevel("INFO")
 
 # anticipated table structure
 
-TABLES = ["currency",
-          "payment",
-          "department",
-          "transaction",
-          "design",
-          "address",
-          "staff",
-          "counterparty",
-          "purchase_order",
-          "payment_type",
-          "sales_order"]
+TABLES = [
+    "currency",
+    "payment",
+    "department",
+    "transaction",
+    "design",
+    "address",
+    "staff",
+    "counterparty",
+    "purchase_order",
+    "payment_type",
+    "sales_order",
+]
 
 
 def extract(client, conn: pg.Connection, bucket, table, time):
@@ -46,7 +48,7 @@ def extract(client, conn: pg.Connection, bucket, table, time):
         None
 
     """
-    logger.info(f'extracting {table}')
+    logger.info(f"extracting {table}")
     last_updated = environ.get("PG_LAST_UPDATED", None)
     sql = f"""SELECT * FROM '{table}' WHERE created_at
     > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS')
@@ -57,7 +59,7 @@ def extract(client, conn: pg.Connection, bucket, table, time):
         data = rows_to_dict(rows, conn.columns)
         df = pd.DataFrame(data=data)
         key = f"{time.isoformat()}/{table}.pqt"
-        logger.info(f'output key is {key}')
+        logger.info(f"output key is {key}")
         upload_parquet(client, bucket, key, df)
 
 
@@ -79,29 +81,31 @@ def lambda_handler(event, context):
         and upload tasks without explicit return data.
     """
     try:
-        time = datetime.strptime(event['time'], "%Y-%m-%dT%H:%M:%SZ")
-        username = environ.get('PGUSER', 'testing')
-        password = environ.get('PGPASSWORD', 'testing')
-        host = environ.get('PGHOST', 'testing')
-        port = environ.get('PGPORT', '5432')
-        database = environ.get('PGDATABASE')
+        time = datetime.strptime(event["time"], "%Y-%m-%dT%H:%M:%SZ")
+        username = environ.get("PGUSER", "testing")
+        password = environ.get("PGPASSWORD", "testing")
+        host = environ.get("PGHOST", "testing")
+        port = environ.get("PGPORT", "5432")
+        database = environ.get("PGDATABASE")
         connection = pg.Connection(
-            username, password=password,
-            host=host, port=port,
-            database=database)
+            username, password=password, host=host,
+            port=port, database=database
+        )
 
-        s3 = client('s3')
-        bucket = environ.get('S3_EXTRACT_BUCKET', 'ingestion')
+        s3 = client("s3")
+        bucket = environ.get("S3_EXTRACT_BUCKET", "ingestion")
 
         # query to dynamically retrieve all valid tables
 
-        rows = connection.run(r"""
+        rows = connection.run(
+            r"""
                     SELECT tablename
                     FROM pg_catalog.pg_tables
                     WHERE schemaname != 'pg_catalog'
                     AND schemaname != 'information_schema'
                     AND tablename NOT LIKE '\_%';
-                    """)
+                    """
+        )
 
         assert rows is not None
 
@@ -136,8 +140,7 @@ def upload_parquet(client, bucket, key, data):
         It performs the upload operation directly.
     """
     data.to_parquet(path="/tmp/output.parquet")
-    client.upload_file(
-        Bucket=bucket, Key=key, Filename="/tmp/output.parquet")
+    client.upload_file(Bucket=bucket, Key=key, Filename="/tmp/output.parquet")
 
 
 def rows_to_dict(items, columns):
@@ -158,7 +161,7 @@ def rows_to_dict(items, columns):
         as keys and corresponding values.
     """
     accumulator = []
-    indices = [col['name'] for col in columns]
+    indices = [col["name"] for col in columns]
     for item in items:
         pairs = [(indices[i], value) for i, value in enumerate(item)]
         accumulator.append(dict(pairs))
