@@ -7,11 +7,11 @@ jobs:
   terraform-validate:
     runs-on: ubuntu-latest
     steps:
-      - name Checkout Repo
+      - name: Checkout Repo
         uses: actions/checkout@v4
-      - name Run Validation
+      - name: Run Validation
         working-directory: Terraform
-        run: Terraform validate
+        run: terraform validate
   run-checks:
     runs-on: ubuntu-latest
     steps:
