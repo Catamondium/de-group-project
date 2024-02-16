@@ -1,5 +1,13 @@
 #!/usr/bin/bash
 
+: '
+For Makefile use
+generates credentials into $1
+parses some psql results for PGUSER
+parses ~/.pgpass for PGPASSWORD
+'
+
+
 USERS=($(echo "select current_user;" | psql))
 USER=${USERS[2]}
 

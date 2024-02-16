@@ -1,6 +1,5 @@
 name: Test and Deploy
 on:
-  - Workflow_dispatch
   - push
 
 jobs:
