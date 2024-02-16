@@ -12,7 +12,7 @@ PYTHONPATH=".:./src:./test:./spikes"
 SHELL := /bin/bash
 PROFILE = default
 PIP:=pip
-PYTEST_OPTS = -vvvv
+PYTEST_OPTS = -vvvv -rP
 PYTEST_COV = --cov=src --cov-fail-under=90 --no-cov-on-fail --cov-report=term-missing
 TRACK=.make_trackers
 VENV=venv

@@ -4,6 +4,8 @@ on:
     paths:
       - "Terraform/*.tf"
       - "Terraform/*.tf.json"
+    branches-ignore:
+      - main
 
 jobs:
   terraform-validate:

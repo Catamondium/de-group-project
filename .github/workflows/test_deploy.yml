@@ -1,9 +1,30 @@
-name: Test and Deploy
+name: All Tests
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
 
 jobs:
+  terraform-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-2
+          aws-access-key-id: ${{ secrets.AWS_SECRET_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Init
+        working-directory: Terraform
+        run: terraform init
+
+      - name: Run Validation
+        working-directory: Terraform
+        run: terraform validate
   run-checks:
     runs-on: ubuntu-latest
     steps:
@@ -49,6 +70,7 @@ jobs:
   #   needs:
   #     - run-tests
   #     - run-checks
+  #     - terraform-validate
   #   steps:
   #     - name: Checkout Repo
   #       uses: actions/checkout@v4
@@ -69,5 +91,5 @@ jobs:
   #       run: terraform plan
 
   #     - name: Terrafrom Apply
-  #       working-directory: terraform
+  #       working-directory: Terraform
   #       run: terraform apply -auto-approve
