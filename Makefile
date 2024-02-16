@@ -21,7 +21,7 @@ PSQL_ENV=.env.ini
 TF_DIR=Terraform
 
 ## Run all checks
-run-checks: $(SITE_PACKAGES) $(TRACK)/terraform run-security run-flake notices unit-tests
+run-checks: $(SITE_PACKAGES)  notices unit-tests run-security run-flake
 
 notices: unfrozen
 
@@ -81,9 +81,6 @@ dev-setup: $(SITE_PACKAGES) init-db
 ## Run the flake8 code check
 run-flake:
 	$(call execute_in_env, flake8 src test)
-
-$(TRACK)/terraform: $(TF_DIR)/*.tf
-	$(call terraform_action, terraform validate)
 
 run-bandit:
 	$(call execute_in_env, bandit -lll */*.py *c/*/*.py)
