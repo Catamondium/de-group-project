@@ -3,7 +3,7 @@ import logging
 from os import environ
 import pg8000.native as pg
 from boto3 import client
-from extractor_queries_dict import get_query  # ,TABLES
+from src.extractor_queries_dict import get_query  # ,TABLES
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
