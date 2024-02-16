@@ -16,12 +16,12 @@ PYTEST_OPTS = -vvvv -rP
 PYTEST_COV = --cov=src --cov-fail-under=90 --no-cov-on-fail --cov-report=term-missing
 TRACK=.make_trackers
 VENV=venv
-SITE_PACKAGES=$(VENV)/lib/*/site-packages/
+SITE_PACKAGES=$(TRACK)/packages
 PSQL_ENV=.env.ini
 TF_DIR=Terraform
 
 ## Run all checks
-run-checks: $(SITE_PACKAGES)  notices unit-tests run-security run-flake
+run-checks: hook $(SITE_PACKAGES) notices unit-tests run-security run-flake
 
 notices: unfrozen
 
@@ -39,8 +39,9 @@ $(VENV):
 	)
 
 
-$(SITE_PACKAGES) : requirements.txt $(VENV)
+$(TRACK)/packages : requirements.txt $(VENV)
 	$(call execute_in_env, $(PIP) install -r requirements.txt)
+	touch $(TRACK)/packages
 
 unfrozen:
 	@$(call execute_in_env, ./scripts/unfrozen.sh)
@@ -68,9 +69,12 @@ init-db $(PSQL_ENV):
 	fi;
 	psql -f ./test/test_extract_db/subset_test_db.sql
 
+hook:
+	@ln -sf $(realpath pre-commit.sh) .git/hooks/pre-commit
+
+
 ## Install flake8
-dev-setup: $(SITE_PACKAGES) init-db
-	ln -sf $(realpath pre-commit.sh) .git/hooks/pre-commit
+dev-setup: init-db
 	$(call execute_in_env, $(PIP) install flake8)
 	$(call execute_in_env, $(PIP) install pytest)
 	$(call execute_in_env, $(PIP) install pytest-cov)
@@ -105,3 +109,5 @@ clean:
 	rm -drf $(VENV)
 	rm .env.ini
 	echo "drop database totesys_test_subset" | psql
+
+.PHONY: clean init actions-init unit-tests run-security run-bandit run-flake dev-setup hook init-db unfrozen notices run-checks
