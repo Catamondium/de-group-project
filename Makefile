@@ -94,6 +94,7 @@ unit-tests:
 run-security: run-bandit $(TRACK)/safety
 
 init: $(VENV) $(SITE_PACKAGES) dev-setup init-db
+actions-init: $(VENV) $(SITE_PACKAGES) dev-setup 
 
 clean:
 	@echo "erasing setup"
