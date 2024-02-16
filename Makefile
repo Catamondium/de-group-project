@@ -79,6 +79,10 @@ run-flake:
 run-bandit:
 	$(call execute_in_env, bandit -lll */*.py *c/*/*.py)
 
+# Actions helper
+rub-safety : requirements.txt
+	$(call execute_in_env, safety check -r ./requirements.txt)
+
 $(TRACK)/safety : requirements.txt
 	$(call execute_in_env, safety check -r ./requirements.txt)
 	touch $(TRACK)/safety
