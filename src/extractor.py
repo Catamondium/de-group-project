@@ -22,13 +22,15 @@ def extract(client,
     else:
         query = get_query(table, last_successful_update_time)
 
-    # print(query, "::::::::::::::::::::::::::::::::")
+    print(query, "::::::::::::::::::::::::::::::::")
     rows = conn.run(query)
     data = rows_to_dict(rows, conn.columns)
+    print(data, '<<<<<<<<<<<<<<<<<')
     df = pd.DataFrame(data=data)
     key = f"{time.isoformat()}/{table}.pqt"
     logger.info(f'output key is {key}')
     upload_parquet(client, bucket, key, df)
+    return data
 
 
 def lambda_handler(event, context):
