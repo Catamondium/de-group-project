@@ -25,14 +25,22 @@ TABLES = ["currency",
 
 def extract(client, conn: pg.Connection, bucket, table, time):
     """
-    Extracts data from a PostgreSQL database table based on the specified time and uploads it to an S3 bucket in Parquet format.
+    Extracts data from a PostgreSQL database table
+    based on the specified time and uploads it to
+    an S3 bucket in Parquet format.
 
     Args:
-        client (boto3.client): An instance of the Boto3 S3 client.
-        conn (pg.Connection): A connection object representing the connection to the PostgreSQL database.
-        bucket (str): The name of the S3 bucket where the data will be uploaded.
-        table (str): The name of the PostgreSQL database table to extract data from.
-        time (datetime.datetime): The timestamp representing the time from which data should be extracted.
+        client (boto3.client): An instance of the
+        Boto3 S3 client.
+        conn (pg.Connection): A connection object
+        representing the connection to the PostgreSQL
+        database.
+        bucket (str): The name of the S3 bucket where
+        the data will be uploaded.
+        table (str): The name of the PostgreSQL
+        database table to extract data from.
+        time (datetime.datetime): The timestamp representing
+        the time from which data should be extracted.
 
     Returns:
         None
@@ -40,7 +48,10 @@ def extract(client, conn: pg.Connection, bucket, table, time):
     """
     logger.info(f'extracting {table}')
     last_updated = environ.get("PG_LAST_UPDATED", None)
-    sql = f"SELECT * FROM {table} WHERE created_at > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS') OR last_updated > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS')"
+    sql = f"""SELECT * FROM '{table}' WHERE created_at
+    > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS')
+    OR last_updated > to_timestamp('{last_updated}',
+    'YYYY-MM-DD HH24:MI:SS')"""
     rows = conn.run(sql)
     if len(rows) > 0:
         data = rows_to_dict(rows, conn.columns)
@@ -52,14 +63,20 @@ def extract(client, conn: pg.Connection, bucket, table, time):
 
 def lambda_handler(event, context):
     """
-    Handles the Lambda event and extracts data from PostgreSQL tables to upload to an S3 bucket in Parquet format.
+    Handles the Lambda event and extracts data
+    from PostgreSQL tables to upload to an S3
+    bucket in Parquet format.
 
     Args:
-        event (dict): The event data passed to the Lambda function.
-        context (LambdaContext): The runtime information of the Lambda function.
+        event (dict): The event data passed
+        to the Lambda function.
+        context (LambdaContext): The runtime
+        information of the Lambda function.
 
     Returns:
-        None: The function does not return a specific value. It performs data extraction and upload tasks without explicit return data.
+        None: The function does not return a
+        specific value. It performs data extraction
+        and upload tasks without explicit return data.
     """
     try:
         time = datetime.strptime(event['time'], "%Y-%m-%dT%H:%M:%SZ")
@@ -101,16 +118,22 @@ def lambda_handler(event, context):
 
 def upload_parquet(client, bucket, key, data):
     """
-    Uploads a Pandas DataFrame as a Parquet file to an S3 bucket.
+    Uploads a Pandas DataFrame as a Parquet file
+    to an S3 bucket.
 
     Args:
-        client (boto3.client): An S3 client object for interacting with AWS S3.
-        bucket (str): The name of the S3 bucket to upload the Parquet file to.
-        key (str): The key (object name) to use for the Parquet file within the S3 bucket.
-        data (pd.DataFrame): The Pandas DataFrame to be uploaded as a Parquet file.
+        client (boto3.client): An S3 client object
+        for interacting with AWS S3.
+        bucket (str): The name of the S3 bucket
+        to upload the Parquet file to.
+        key (str): The key (object name) to use
+        for the Parquet file within the S3 bucket.
+        data (pd.DataFrame): The Pandas DataFrame
+        to be uploaded as a Parquet file.
 
     Returns:
-        None: The function does not return a specific value. It performs the upload operation directly.
+        None: The function does not return a specific value.
+        It performs the upload operation directly.
     """
     data.to_parquet(path="/tmp/output.parquet")
     client.upload_file(
@@ -119,15 +142,21 @@ def upload_parquet(client, bucket, key, data):
 
 def rows_to_dict(items, columns):
     """
-Converts rows fetched from a PostgreSQL query to a list of dictionaries, where each dictionary represents a row with column names as keys.
+    Converts rows fetched from a PostgreSQL query
+    to a list of dictionaries, where each dictionary
+    represents a row with column names as keys.
 
-Args:
-    items (list): A list of lists, where each inner list represents a row of data.
-    columns (list): A list of dictionaries containing information about database columns.
+    Args:
+        items (list): A list of lists, where each inner
+        list represents a row of data.
+        columns (list): A list of dictionaries containing
+        information about database columns.
 
-Returns:
-    list: A list of dictionaries, where each dictionary represents a row with column names as keys and corresponding values.
-"""
+    Returns:
+        list: A list of dictionaries, where each
+        dictionary represents a row with column names
+        as keys and corresponding values.
+    """
     accumulator = []
     indices = [col['name'] for col in columns]
     for item in items:
