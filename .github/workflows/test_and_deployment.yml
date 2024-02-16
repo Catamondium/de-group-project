@@ -28,7 +28,7 @@ jobs:
         run: make actions-init
 
       - name: Run Security-Checks
-        run: make security-test
+        run: make run-security
 
       - name: Run Flake
         run: make run-flake
