@@ -9,6 +9,7 @@ import pytest
 from io import BytesIO
 import os
 from sample_datasets import sample_dataset
+from t_utils import inhibit_CI
 
 
 class SAME_DF:
@@ -48,6 +49,7 @@ class TestRowstoDict:
         assert actual == expected
 
 
+@inhibit_CI
 @pytest.fixture(scope="function")
 def mockdb_creds():
     """Mocked AWS Credentials for moto."""
@@ -150,6 +152,7 @@ def test_lambda_handler(conn, MockExtract, client):
 
 
 @mock_aws
+@inhibit_CI
 def test_integrate(s3, mockdb_creds):
     TABLES = ["currency",
               "payment",
