@@ -85,7 +85,7 @@ jobs:
 
       - name: Terraform Plan
         working-directory: Terraform
-        run: terraform plan
+        run: terraform plan -var 'username=${{ secrets.PGUSER }}' -var 'password=${{ secrets.PGPASSWORD }}' -var 'port=${{ secrets.PGPORT }}'
 
       - name: Terrafrom Apply
         working-directory: Terraform
