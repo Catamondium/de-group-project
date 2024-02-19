@@ -71,7 +71,7 @@ init-db $(PSQL_ENV):
 	psql -f ./test/test_extract_db/subset_test_db.sql
 
 hook:
-	@ln -sf $(realpath pre-commit.sh) .git/hooks/pre-commit
+	@ln -sf $(realpath -s pre-commit.sh) .git/hooks/pre-commit
 
 
 ## Install flake8
