@@ -89,4 +89,4 @@ jobs:
 
       - name: Terrafrom Apply
         working-directory: Terraform
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var 'username=${{ secrets.PGUSER }}' -var 'password=${{ secrets.PGPASSWORD }}' -var 'port=${{ secrets.PGPORT }}'
