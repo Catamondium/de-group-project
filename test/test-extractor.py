@@ -178,7 +178,7 @@ def test_integrate(s3, mockdb_creds):
     print(objects)
     files = [file['Key'] for file in objects['Contents']]
 
-    assert len(files) == 5
+    assert len(files) == 11
 
     for table in TABLES:
         expected_file_name = f'2024-01-01T10:45:18/{table}.pqt'

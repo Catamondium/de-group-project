@@ -68,7 +68,7 @@ init-db $(PSQL_ENV):
 	if [[ ! -f $(PSQL_ENV) ]]; then \
 		./scripts/psqlcreds.sh $(PSQL_ENV) ;\
 	fi;
-	psql -f ./test/test_extract_db/subset_test_db.sql
+	psql -f ./test/test_extract_db/subset_test_db_simple.sql
 
 hook:
 	@ln -sf $(realpath -s pre-commit.sh) .git/hooks/pre-commit
@@ -100,8 +100,8 @@ unit-tests:
 
 run-security: run-bandit $(TRACK)/safety
 
-init: $(VENV) $(SITE_PACKAGES) dev-setup init-db
-	mkdir $(TRACK)
+init: $(VENV) dev-setup init-db
+	mkdir -p $(TRACK)
 actions-init: $(VENV) $(SITE_PACKAGES)
 	mkdir -p $(TRACK)
 
