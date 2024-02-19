@@ -4,6 +4,8 @@
 #
 #################################################################################
 
+
+PROJECT_NAME = NC-project
 REGION = eu-west-2
 PYTHON_INTERPRETER = python3
 WD=$(shell pwd)
