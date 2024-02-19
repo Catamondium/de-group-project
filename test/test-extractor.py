@@ -31,158 +31,159 @@ class TestRowstoDict:
 
     def test_single(self):
         items = [[1]]
-        columns = [{'name': 'a'}]
-        expected = [{'a': 1}]
+        columns = [{"name": "a"}]
+        expected = [{"a": 1}]
 
         actual = rows_to_dict(items, columns)
 
         assert actual == expected
 
     def test_multiple(self):
-        items = [[1, 2, 'AAA'], [4, 5, 'BBB']]
-        columns = [{'name': 'a'}, {'name': 'b'}, {'name': 'c'}]
-        expected = [{'a': 1, 'b': 2, 'c': 'AAA'},
-                    {'a': 4, 'b': 5, 'c': 'BBB'}]
+        items = [[1, 2, "AAA"], [4, 5, "BBB"]]
+        columns = [{"name": "a"}, {"name": "b"}, {"name": "c"}]
+        expected = [{"a": 1, "b": 2, "c": "AAA"}, {"a": 4, "b": 5, "c": "BBB"}]
 
         actual = rows_to_dict(items, columns)
 
         assert actual == expected
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def mockdb_creds():
     """Mocked AWS Credentials for moto."""
 
     config = ConfigParser()
-    config.read('.env.ini')
-    section = config['DEFAULT']
+    config.read(".env.ini")
+    section = config["DEFAULT"]
 
-    os.environ['PGUSER'] = section['PGUSER']
-    os.environ['PGPASSWORD'] = section['PGPASSWORD']
-    os.environ['PGHOST'] = "127.0.0.1"
-    os.environ['PGDATABASE'] = "totesys_test_subset"
+    os.environ["PGUSER"] = section["PGUSER"]
+    os.environ["PGPASSWORD"] = section["PGPASSWORD"]
+    os.environ["PGHOST"] = "127.0.0.1"
+    os.environ["PGDATABASE"] = "totesys_test_subset"
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
 
-    os.environ['AWS_ACCESS_KEY_ID'] = 'test'
-    os.environ['AWS_SECRET_ACCESS_KEY'] = 'test'
-    os.environ['AWS_SECURITY_TOKEN'] = 'test'
-    os.environ['AWS_SESSION_TOKEN'] = 'test'
-    os.environ['AWS_DEFAULT_REGION'] = 'eu-west-2'
+    os.environ["AWS_ACCESS_KEY_ID"] = "test"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+    os.environ["AWS_SECURITY_TOKEN"] = "test"
+    os.environ["AWS_SESSION_TOKEN"] = "test"
+    os.environ["AWS_DEFAULT_REGION"] = "eu-west-2"
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def s3(aws_credentials):
     with mock_aws():
-        yield boto3.client('s3')
+        yield boto3.client("s3")
 
 
 @mock_aws
 def test_upload_parquet(s3):
-    bucket = 'test-bucket'
-    key = 'test.parquet'
+    bucket = "test-bucket"
+    key = "test.parquet"
 
-    data = pd.DataFrame([{'a': 1}])
+    data = pd.DataFrame([{"a": 1}])
 
     s3.create_bucket(
-        Bucket=bucket,
-        CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+        Bucket=bucket, CreateBucketConfiguration={
+            "LocationConstraint": "eu-west-2"}
+    )
 
     upload_parquet(s3, bucket, key, data)
 
     objects = s3.list_objects_v2(Bucket=bucket)
 
-    files = [file['Key'] for file in objects['Contents']]
+    files = [file["Key"] for file in objects["Contents"]]
 
     assert key in files
 
 
 @patch("extractor.upload_parquet")
 def test_extract(upload):
-    client = 's3'
+    client = "s3"
     datestring = "2024-02-13T10:45:18"
 
-    os.environ['S3_EXTRACT_BUCKET'] = 'ingestion'
+    os.environ["S3_EXTRACT_BUCKET"] = "ingestion"
 
     conn = Mock()
-    conn.run.return_value = [[1, 2, 'AAA'], [4, 5, 'BBB']]
-    conn.columns = [{'name': 'a'}, {'name': 'b'}, {'name': 'c'}]
-    table = 'cat'
+    conn.run.return_value = [[1, 2, "AAA"], [4, 5, "BBB"]]
+    conn.columns = [{"name": "a"}, {"name": "b"}, {"name": "c"}]
+    table = "cat"
     time = datetime.fromisoformat(datestring)
 
-    df = pd.DataFrame(data=[{'a': 1, 'b': 2, 'c': 'AAA'},
-                            {'a': 4, 'b': 5, 'c': 'BBB'}])
+    df = pd.DataFrame(data=[{"a": 1, "b": 2, "c": "AAA"},
+                            {"a": 4, "b": 5, "c": "BBB"}])
 
     key = f"{datestring}/{table}.pqt"
 
-    extract(client, conn, 'ingestion', table, time)
+    extract(client, conn, "ingestion", table, time)
 
-    upload.assert_called_with(client, 'ingestion', key, SAME_DF(df))
+    upload.assert_called_with(client, "ingestion", key, SAME_DF(df))
 
 
 @mock_aws
-@patch('extractor.client')
+@patch("extractor.client")
 @patch("extractor.extract")
 @patch("extractor.pg.Connection")
 def test_lambda_handler(conn, MockExtract, client):
     time = datetime.fromisoformat("2024-02-13T10:45:18+0000")
     connMock = Mock()
 
-    event = {
-        'time': time
-    }
-    context = ''
+    event = {"time": time}
+    context = ""
 
-    client.return_value = 's3'
+    client.return_value = "s3"
     conn.return_value = connMock
-    connMock.run.return_value = [['example_table']]
+    connMock.run.return_value = [["example_table"]]
 
     lambda_handler(event, context)
 
-    MockExtract.assert_called_with(
-        's3', connMock, 'ingestion', 'example_table', time)
+    MockExtract.assert_called_with("s3", connMock,
+                                   "ingestion", "example_table", time)
 
 
 @mock_aws
 def test_integrate(s3, mockdb_creds):
-    TABLES = ["currency",
-              "payment",
-              "department",
-              "transaction",
-              "design",
-              "address",
-              "staff",
-              "counterparty",
-              "purchase_order",
-              "payment_type",
-              "sales_order"]
-    event = {'time': datetime.fromisoformat("2024-02-13T10:45:18")}
+    TABLES = [
+        "currency",
+        "payment",
+        "department",
+        "transaction",
+        "design",
+        "address",
+        "staff",
+        "counterparty",
+        "purchase_order",
+        "payment_type",
+        "sales_order",
+    ]
+    event = {"time": datetime.fromisoformat("2024-02-13T10:45:18Z")}
 
     # ACT
     s3.create_bucket(
-        Bucket='ingestion',
-        CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+        Bucket="ingestion",
+        CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
+    )
 
-    lambda_handler(event, '')
+    lambda_handler(event, "")
 
-    objects = s3.list_objects_v2(Bucket='ingestion')
-    files = [file['Key'] for file in objects['Contents']]
+    objects = s3.list_objects_v2(Bucket="ingestion")
+    files = [file["Key"] for file in objects["Contents"]]
 
     assert len(files) == 11
 
     for table in TABLES:
-        expected_file_name = f'2024-02-13T10:45:18/{table}.pqt'
+        expected_file_name = f"2024-02-13T10:45:18/{table}.pqt"
         assert expected_file_name in files
 
         expected_table = sample_dataset[table]
         # print(expected_table[0], table, '-------------------------------')
 
-        resp = s3.get_object(Bucket='ingestion',
+        resp = s3.get_object(Bucket="ingestion",
                              Key=f"2024-02-13T10:45:18/{table}.pqt")
-        df = pd.read_parquet(BytesIO(resp['Body'].read()))
+        df = pd.read_parquet(BytesIO(resp["Body"].read()))
         existing_table = df.to_records()
 
         for i, row in enumerate(existing_table):
