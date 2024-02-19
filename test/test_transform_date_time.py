@@ -1,5 +1,4 @@
 import pandas as pd
-import pyarrow
 import datetime
 import pytest
 from src.transform_date_time import get_date_and_time
