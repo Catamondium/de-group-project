@@ -46,20 +46,19 @@ jobs:
       - name: Run Flake
         run: make run-flake
 
-  # BLOCKED TODO pending modifications to testing structure (RE: no psql DB in Actions instances)
-  # run-tests:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Repo
-  #       uses: actions/checkout@v4
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
-  #     - name: Setup Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.11"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-  #     - name: Setup venv
-  #       run: make actions-init
+      - name: Setup venv
+        run: make actions-init
 
-  #     - name: Run tests
-  #       run: make unit-tests
+      - name: Run tests
+        run: make unit-tests
