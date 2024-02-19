@@ -62,33 +62,31 @@ jobs:
       - name: Run tests
         run: make unit-tests
 
-  # BLOCKED TODO pending clarity on Terraform livetest
-  # ALSO separate and trigger on PR [closed]
-  # deploy:
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - run-tests
-  #     - run-checks
-  #     - terraform-validate
-  #   steps:
-  #     - name: Checkout Repo
-  #       uses: actions/checkout@v4
+  deploy:
+    runs-on: ubuntu-latest
+    needs:
+      - run-tests
+      - run-checks
+      - terraform-validate
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
-  #     - name: Setup AWS CLI
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-region: eu-west-2
-  #         aws-access-key-id: ${{ secrets.AWS_SECRET_KEY }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Setup AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-2
+          aws-access-key-id: ${{ secrets.AWS_SECRET_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-  #     - name: Terraform Init
-  #       working-directory: Terraform
-  #       run: terraform init
+      - name: Terraform Init
+        working-directory: Terraform
+        run: terraform init
 
-  #     - name: Terraform Plan
-  #       working-directory: Terraform
-  #       run: terraform plan
+      - name: Terraform Plan
+        working-directory: Terraform
+        run: terraform plan
 
-  #     - name: Terrafrom Apply
-  #       working-directory: Terraform
-  #       run: terraform apply -auto-approve
+      - name: Terrafrom Apply
+        working-directory: Terraform
+        run: terraform apply -auto-approve
