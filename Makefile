@@ -4,19 +4,30 @@
 #
 #################################################################################
 
+
 PROJECT_NAME = NC-project
 REGION = eu-west-2
 PYTHON_INTERPRETER = python3
 WD=$(shell pwd)
-PYTHONPATH=${WD}
+PYTHONPATH=".:./src:./test:./spikes"
 SHELL := /bin/bash
 PROFILE = default
 PIP:=pip
 PYTEST_OPTS = -vvvv
-PYTHONPATH=./src
+PYTEST_COV = --cov=src --cov-fail-under=90 --no-cov-on-fail --cov-report=term-missing
+TRACK=.make_trackers
+VENV=venv
+SITE_PACKAGES=$(TRACK)/packages
+PSQL_ENV=.env.ini
+TF_DIR=Terraform
+
+## Run all checks
+run-checks: hook $(SITE_PACKAGES) notices unit-tests run-security run-flake
+
+notices: unfrozen
 
 ## Create python interpreter environment.
-create-environment:
+$(VENV):
 	@echo ">>> About to create environment: $(PROJECT_NAME)..."
 	@echo ">>> check python3 version"
 	( \
@@ -25,13 +36,16 @@ create-environment:
 	@echo ">>> Setting up VirtualEnv."
 	( \
 	    $(PIP) install -q virtualenv virtualenvwrapper; \
-	    $(PYTHON_INTERPRETER) -m venv venv; \
+	    $(PYTHON_INTERPRETER) -m venv $(VENV); \
 	)
 
-requirements: venv requirements.txt
-	$(call execute_in_env, $(PIP) install -r requirements.txt)
-	ln -sf $(realpath pre-commit.sh) .git/hooks/pre-commit
 
+$(TRACK)/packages : requirements.txt $(VENV)
+	$(call execute_in_env, $(PIP) install -r requirements.txt)
+	touch $(TRACK)/packages
+
+unfrozen:
+	@$(call execute_in_env, ./scripts/unfrozen.sh)
 
 # Define utility variable to help calling Python from the virtual environment
 ACTIVATE_ENV := source venv/bin/activate
@@ -41,33 +55,33 @@ define execute_in_env
 	$(ACTIVATE_ENV) && $1
 endef
 
+# Run terraform actions in Terraform directory
+define terraform_action
+	cd $(TF_DIR) && $1
+endef
+
 ################################################################################################################
 # Set Up
 ## local testing database
-init-db:
+init-db $(PSQL_ENV):
 	# Why does make have to parse like this?
-	if [[ ! -f .env.ini ]]; then\
-		echo -e "[DEFAULT]\nPGUSER=\nPGPASSWORD=\n" > .env.ini;\
+	if [[ ! -f $(PSQL_ENV) ]]; then \
+		./scripts/psqlcreds.sh $(PSQL_ENV) ;\
 	fi;
 	psql -f ./test/test_extract_db/subset_test_db.sql
 
+hook:
+	@ln -sf $(realpath pre-commit.sh) .git/hooks/pre-commit
+
+
 ## Install flake8
-flake:
+dev-setup: init-db
 	$(call execute_in_env, $(PIP) install flake8)
-
-## Install pytest
-pytest:
 	$(call execute_in_env, $(PIP) install pytest)
-
-## Install pytest
-bandit:
+	$(call execute_in_env, $(PIP) install pytest-cov)
 	$(call execute_in_env, $(PIP) install bandit)
-
-## Install pytest
-safety:
 	$(call execute_in_env, $(PIP) install safety)
 
-dev-setup: bandit safety pytest flake requirements
 
 ## Run the flake8 code check
 run-flake:
@@ -76,16 +90,25 @@ run-flake:
 run-bandit:
 	$(call execute_in_env, bandit -lll */*.py *c/*/*.py)
 
-run-safety: requirements.txt
+$(TRACK)/safety : requirements.txt
 	$(call execute_in_env, safety check -r ./requirements.txt)
+	touch $(TRACK)/safety
 
 ## Run all the unit tests
 unit-tests:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest ${PYTEST_OPTS} test/*.py)
+	$(call execute_in_env, PYTHONPATH="${PYTHONPATH}" pytest ${PYTEST_OPTS} ${PYTEST_COV} $(ARGS) test/*.py)
 
-run-security: run-bandit run-safety
+run-security: run-bandit $(TRACK)/safety
 
-## Run all checks
-run-checks: run-security run-flake unit-tests
+init: $(VENV) $(SITE_PACKAGES) dev-setup init-db
+	mkdir $(TRACK)
+actions-init: $(VENV) $(SITE_PACKAGES)
+	mkdir $(TRACK)
 
-init: create-environment requirements init-db
+clean:
+	@echo "erasing setup"
+	rm -drf $(VENV)
+	rm .env.ini
+	echo "drop database totesys_test_subset" | psql
+
+.PHONY: clean init actions-init unit-tests run-security run-bandit run-flake dev-setup hook init-db unfrozen notices run-checks

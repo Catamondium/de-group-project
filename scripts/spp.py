@@ -5,6 +5,13 @@ from typing import Dict
 
 
 def template(infile: TFile, outfile: TFile, vars: Dict[str, str]):
+    """run substitutions line-by-line from infile to outfile
+
+    Args:
+        infile (TextIOWrapper): file to read template from
+        outfile (TextIOWrapper): file to write substituted text into
+        vars (Dict[str, str]): template bindings
+    """
     for line in infile:
         for sym, val in vars.items():
             line = line.replace(sym, val)
