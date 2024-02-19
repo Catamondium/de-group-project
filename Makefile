@@ -81,7 +81,7 @@ run-safety: requirements.txt
 
 ## Run all the unit tests
 unit-tests:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest ${PYTEST_OPTS} test/*.py)
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest ${PYTEST_OPTS} test/*.py )
 
 run-security: run-bandit run-safety
 

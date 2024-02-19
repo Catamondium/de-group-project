@@ -6,7 +6,6 @@ from datetime import datetime
 from configparser import ConfigParser
 import pytest
 import os
-# from sample_datasets import sample_dataset
 import pg8000.native as pg
 
 
@@ -42,7 +41,7 @@ def s3(aws_credentials):
 
 
 @pytest.fixture(scope='function')
-def db_connection():
+def db_connection(mockdb_creds):
     """ connect to db """
     conn = pg.Connection(
         user=os.getenv('PGUSER'),
@@ -59,6 +58,7 @@ def test_connection_to_test_db(db_connection):
     try:
         conn = db_connection
         cursor = conn.run("SELECT 1")
+
         assert cursor[0][0] == 1, "Cant connect to test DB."
     except Exception as e:
         pytest.fail(f"Connection error: {e}")

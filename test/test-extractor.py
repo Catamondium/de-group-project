@@ -171,18 +171,24 @@ def test_extract_with_mod_queries_plus_last_updated_time(upload):
 
 
 @mock_aws
+@patch("extractor.write_current_time")
 @patch('extractor.client')
 @patch("extractor.extract")
 @patch("extractor.get_last_updated_time")
 @patch("extractor.pg.Connection")
-def test_lambda_handler(conn, get_last_updated_time, MockExtract, client):
-    time = datetime.fromisoformat("2024-02-13T10:45:18+0000")
+def test_lambda_handler(conn,
+                        get_last_updated_time,
+                        MockExtract, client,
+                        write_current_time):
+    time = datetime.strptime("2024-02-13T10:45:18Z", "%Y-%m-%dT%H:%M:%SZ")
+
     connMock = Mock()
     get_last_updated_time.return_value = "2024-01-01 00:00:00.000000"
     event = {
-        'time': time
+        'time': "2024-02-13T10:45:18Z"
     }
     context = ''
+    write_current_time.return_value = ''
 
     client.return_value = 's3'
     conn.return_value = connMock
@@ -209,7 +215,7 @@ def test_integrate(s3, mockdb_creds):
               "purchase_order",
               "payment_type",
               "sales_order"]
-    event = {'time': datetime.fromisoformat("2024-02-13T10:45:18")}
+    event = {'time': "2024-02-13T10:45:18Z"}
 
     # ACT
     s3.create_bucket(
@@ -219,6 +225,7 @@ def test_integrate(s3, mockdb_creds):
     lambda_handler(event, '')
 
     objects = s3.list_objects_v2(Bucket='ingestion')
+    print(objects)
     files = [file['Key'] for file in objects['Contents']]
 
     assert len(files) == 11

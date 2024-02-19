@@ -11,7 +11,12 @@ logger.setLevel("INFO")
 
 
 def extract(
-    client, conn: pg.Connection, bucket, table, time, last_successful_update_time=None
+        client,
+        conn: pg.Connection,
+        bucket,
+        table,
+        time,
+        last_successful_update_time=None
 ):
 
     # todo
@@ -25,7 +30,7 @@ def extract(
 
     data = rows_to_dict(rows, conn.columns)
     if len(data) > 0:
-        print(data[0], "<<<<<<<<<<<<<<<<<")
+        # print(data[0], "<<<<<<<<<<<<<<<<<")
         df = pd.DataFrame(data=data)
         key = f"{time.isoformat()}/{table}.pqt"
         logger.info(f"output key is {key}")
@@ -45,7 +50,10 @@ def lambda_handler(event, context):
         port = environ.get("PGPORT", "5432")
         database = environ.get("PGDATABASE")
         connection = pg.Connection(
-            username, password=password, host=host, port=port, database=database
+            username,
+            password=password,
+            host=host, port=port,
+            database=database
         )
 
         last_updated_time = get_last_updated_time()
@@ -68,12 +76,11 @@ def lambda_handler(event, context):
         # assert rows is not None
 
         tables = [item[0] for item in rows]
-
+        # print(tables, '<<<<<<<<<<<<<<<<<<<<<')
         for table in tables:
             extract(s3, connection, bucket, table, time, last_updated_time)
 
-        write_current_time(time)
-
+        write_current_time(str(time))
     except Exception as e:
         logger.error(e)
 
@@ -97,7 +104,8 @@ def get_last_updated_time():
     bucket = environ.get("S3_CONTROL_BUCKET", "control_bucket")
 
     try:
-        content = s3.get_object(Bucket=bucket, Key="last_successful_extraction.txt")
+        content = s3.get_object(Bucket=bucket,
+                                Key="last_successful_extraction.txt")
         last_updated_time = content["Body"].read().decode("utf-8").strip()
         return last_updated_time
     except Exception as e:
@@ -112,7 +120,9 @@ def write_current_time(current_time):
 
     try:
         s3.put_object(
-            Bucket=bucket, Key="last_successful_extraction.txt", Body=str(current_time)
+            Bucket=bucket,
+            Key="last_successful_extraction.txt",
+            Body=current_time
         )
         # print("time successfully written")
     except Exception as e:
