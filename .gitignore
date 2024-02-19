@@ -2,7 +2,7 @@
 **/.terraform
 secrets.tfvars
 
-!.gitkeep
+!**/.gitkeep
 
 *.env*
 # Byte-compiled / optimized / DLL files

@@ -102,8 +102,10 @@ run-security: run-bandit $(TRACK)/safety
 
 init: $(VENV) dev-setup init-db
 	mkdir -p $(TRACK)
-actions-init: $(VENV) $(SITE_PACKAGES)
+	make $(SITE_PACKAGES)
+actions-init: $(VENV)
 	mkdir -p $(TRACK)
+	make $(SITE_PACKAGES)
 
 clean:
 	@echo "erasing setup"
