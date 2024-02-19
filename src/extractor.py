@@ -49,11 +49,9 @@ def extract(client, conn: pg.Connection, bucket, table, time):
 
     """
     logger.info(f"extracting {table}")
-    last_updated = environ.get("PG_LAST_UPDATED", None)
-    sql = f"""SELECT * FROM '{table}' WHERE created_at
-    > to_timestamp('{last_updated}', 'YYYY-MM-DD HH24:MI:SS')
-    OR last_updated > to_timestamp('{last_updated}',
-    'YYYY-MM-DD HH24:MI:SS')"""
+    sql = f"""SELECT * FROM {pg.identifier(table)}
+    WHERE last_updated >= '{time}'"""
+
     rows = conn.run(sql)
     if len(rows) > 0:
         data = rows_to_dict(rows, conn.columns)
@@ -110,11 +108,11 @@ def lambda_handler(event, context):
         assert rows is not None
 
         tables = [item[0] for item in rows]
-
         for table in tables:
             extract(s3, connection, bucket, table, time)
         environ["PG_LAST_UPDATED"] = datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S")
+
     except Exception as e:
         logger.info("an error has occurred")
         logger.error(e)

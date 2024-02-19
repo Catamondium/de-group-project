@@ -87,8 +87,8 @@ def test_upload_parquet(s3):
     data = pd.DataFrame([{"a": 1}])
 
     s3.create_bucket(
-        Bucket=bucket, CreateBucketConfiguration={
-            "LocationConstraint": "eu-west-2"}
+        Bucket=bucket,
+        CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
     )
 
     upload_parquet(s3, bucket, key, data)
@@ -128,10 +128,12 @@ def test_extract(upload):
 @patch("extractor.extract")
 @patch("extractor.pg.Connection")
 def test_lambda_handler(conn, MockExtract, client):
-    time = datetime.fromisoformat("2024-02-13T10:45:18+0000")
+    time = datetime.strptime("2024-02-13T10:45:18Z",
+                             "%Y-%m-%dT%H:%M:%SZ")
+
     connMock = Mock()
 
-    event = {"time": time}
+    event = {"time": "2024-02-13T10:45:18Z"}
     context = ""
 
     client.return_value = "s3"
@@ -140,51 +142,53 @@ def test_lambda_handler(conn, MockExtract, client):
 
     lambda_handler(event, context)
 
-    MockExtract.assert_called_with("s3", connMock,
-                                   "ingestion", "example_table", time)
+    MockExtract.assert_called_with("s3",
+                                   connMock,
+                                   "ingestion",
+                                   "example_table",
+                                   time)
 
 
 @mock_aws
 def test_integrate(s3, mockdb_creds):
-    TABLES = [
-        "currency",
-        "payment",
-        "department",
-        "transaction",
-        "design",
-        "address",
-        "staff",
-        "counterparty",
-        "purchase_order",
-        "payment_type",
-        "sales_order",
-    ]
-    event = {"time": datetime.fromisoformat("2024-02-13T10:45:18Z")}
+    TABLES = ["currency",
+              "payment",
+              "department",
+              "transaction",
+              "design",
+              "address",
+              "staff",
+              "counterparty",
+              "purchase_order",
+              "payment_type",
+              "sales_order"]
+    event = {'time': "2024-01-01T10:45:18Z"}
 
     # ACT
     s3.create_bucket(
-        Bucket="ingestion",
-        CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
-    )
+        Bucket='ingestion',
+        CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
 
-    lambda_handler(event, "")
+    lambda_handler(event, '')
 
-    objects = s3.list_objects_v2(Bucket="ingestion")
-    files = [file["Key"] for file in objects["Contents"]]
+    objects = s3.list_objects_v2(Bucket='ingestion')
+    print(objects)
+    files = [file['Key'] for file in objects['Contents']]
 
     assert len(files) == 11
 
     for table in TABLES:
-        expected_file_name = f"2024-02-13T10:45:18/{table}.pqt"
+        expected_file_name = f'2024-01-01T10:45:18/{table}.pqt'
         assert expected_file_name in files
 
         expected_table = sample_dataset[table]
         # print(expected_table[0], table, '-------------------------------')
 
-        resp = s3.get_object(Bucket="ingestion",
-                             Key=f"2024-02-13T10:45:18/{table}.pqt")
-        df = pd.read_parquet(BytesIO(resp["Body"].read()))
+        resp = s3.get_object(Bucket='ingestion',
+                             Key=f"2024-01-01T10:45:18/{table}.pqt")
+        df = pd.read_parquet(BytesIO(resp['Body'].read()))
         existing_table = df.to_records()
 
         for i, row in enumerate(existing_table):
+            print(i, row, expected_table[i], "<<<<<<<<<<<<<<< ROWS")
             assert len(row) == len(expected_table[i]) + 1
