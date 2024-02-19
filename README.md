@@ -2,6 +2,8 @@
 
 Data engineering group project
 
+[![Test & Deploy](https://github.com/Catamondium/de-group-project/actions/workflows/test_deploy.yml/badge.svg?branch=main&event=push)](https://github.com/Catamondium/de-group-project/actions/workflows/test_deploy.yml)
+
 ## DOCS
 
 - [Python3.11](https://docs.python.org/3.11/#): [Pandas](https://pandas.pydata.org/docs/), [Boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html), [AWSwrangler](https://aws-sdk-pandas.readthedocs.io/en/stable/api.html)
