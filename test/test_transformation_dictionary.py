@@ -1,5 +1,7 @@
 import pandas as pd
-from transformation_dictionary import split_time, payment_transformation
+from transformation_dictionary import (split_time,
+                                       payment_transformation,
+                                       purchase_order_transformation)
 
 
 def test_split_time():
@@ -93,3 +95,8 @@ def test_payment_transformation_renames_columns():
         "currency_id was not renamed to currency_record_id."
     assert 'payment_type_record_id' in transformed_df.columns, \
         "payment_type_id was not renamed to payment_type_record_id."
+
+
+def test_purchase_order_transformation():
+    purchase_order_transformation(2)
+    assert True

@@ -15,9 +15,6 @@ def split_time(df,
 
 
 def payment_transformation(df):
-    # OLD
-
-    # payment_id - OK
     # created_at - SPLIT
     df = split_time(df, 'created_at',
                     'created_date',
@@ -45,16 +42,45 @@ def payment_transformation(df):
     df.drop('company_ac_number', axis=1, inplace=True)
     # counterparty_ac_number - DELETE
     df.drop('counterparty_ac_number', axis=1, inplace=True)
-
-    # NEW
-    # payment_record_id -- new
-    # , payment_id, created_date,
-    # created_time, lst_updated_date, last_updated_time
-    # transaction_record_id, counterparty_record_id
-    # payment_amount, currency_record_id
-    # payment_type_record_id, paid, payment_date
-
     return df
+
+
+def purchase_order_transformation(df):
+    # purchase_order_id RENAME  purchase_record_id
+    # AND DUPLICATE to          purchase_order_id
+
+    # created_at SPLIT TO created_date, created_time
+
+    # last_updated SPLIT TO last_updated_date, last_updated_time
+    # staff_id
+    # counterparty_id
+    # item_code
+    # item_quantity
+    # item_unit_price
+    # currency_id
+    # agreed_delivery_date
+    # agreed_payment_date
+    # agreed_delivery_location_id
+
+    # purchase_record_id
+    # purchase_order_id
+
+    # created_date
+    # created_time
+
+    # last_updated_date
+    # last_updated_time
+    # staff_record_id
+    # counterparty_record_id
+    # item_code
+    # item_quantity
+    # item_unit_price
+    # currency_record_id
+    # agreed_delivery_date
+    # agreed_payment_date
+    # agreed_delivery_location_id
+
+    return 0
 
 
 tables_transformation_templates = {
