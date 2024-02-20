@@ -18,10 +18,10 @@ data "archive_file" "lambda" {
   source_file = "${path.module}/../src/extractor.py"
   output_path = "${path.module}/../extraction_lambda.zip"
 
-  depends_on = [null_resource.sauce]
+  depends_on = [null_resource.extraction]
 }
 
-resource "null_resource" "sauce" {
+resource "null_resource" "extraction" {
   /*
     Creates a null resource that triggers the creation of an archive file containing the Lambda function code and dependencies.
 
