@@ -27,5 +27,4 @@ def transform_currency(df):
 
     df.drop(columns=["last_updated", "created_at"], inplace=True)
 
-    print(df.dtypes)
     return df
