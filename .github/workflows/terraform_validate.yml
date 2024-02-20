@@ -4,7 +4,10 @@ on:
     paths:
       - "Terraform/*.tf"
       - "Terraform/*.tf.json"
-    branches-ignore:
+    branches:
+      - "!main"
+  pull_request:
+    branches:
       - main
 
 jobs:
@@ -24,10 +27,24 @@ jobs:
       - name: Check for utility bucket
         run: aws s3 ls | grep ${{ secrets.UTILITY_BUCKET }}
 
+      - name: Compile git.tfvars
+        working-directory: Terraform
+        run: 'cat <<EOF > git.tfvars \
+          username = "${{ secrets.PGUSER }}"\n\
+          password = "${{ secrets.PGPASSWORD }}"\n\
+          port = "${{ secrets.PGPORT }}"\n\
+          host = "${{ secrets.PGHOST }}"\n\
+          database = "${{ secrets.PGDATABASE }}"\n\
+          EOF'
+
+      - name: git.tfvars
+        working-directory: Terraform
+        run: cat git.tfvars
+
       - name: Terraform Init
         working-directory: Terraform
         run: terraform init
 
-      - name: Run Validation
+      - name: Terraform Plan
         working-directory: Terraform
-        run: terraform validate
+        run: terraform plan -var-file git.tfvars
