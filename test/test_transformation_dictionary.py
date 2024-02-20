@@ -66,10 +66,11 @@ def test_payment_transformation_splits_dates():
         "company_ac_number was not removed."
     assert 'counterparty_ac_number' not in transformed_df.columns, \
         "counterparty_ac_number was not removed."
-    
-    # Check if dataframe 
-    # assert transformed_df['payment_id'] == transformed_df['payment_record_id']
-    assert (df['payment_id'] == df['payment_record_id']).all(), "Columns should be identical."
+
+    # Check if dataframe
+    assert (df['payment_id'] == df['payment_record_id']).all(), \
+        "Columns should be identical."
+
 
 def test_payment_transformation_renames_columns():
     test_data = {
@@ -102,7 +103,6 @@ def test_payment_transformation_renames_columns():
         "currency_id was not renamed to currency_record_id."
     assert 'payment_type_record_id' in transformed_df.columns, \
         "payment_type_id was not renamed to payment_type_record_id."
-    
 
 
 def test_purchase_order_transformation():
