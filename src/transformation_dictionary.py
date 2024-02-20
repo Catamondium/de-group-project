@@ -15,6 +15,8 @@ def split_time(df,
 
 
 def payment_transformation(df):
+    # DUPLICATE payment_id
+    df['payment_record_id'] = df['payment_id']
     # created_at - SPLIT
     df = split_time(df, 'created_at',
                     'created_date',
