@@ -88,8 +88,18 @@ jobs:
 
       - name: Terraform Plan
         working-directory: Terraform
-        run: terraform plan -var 'username=${{ secrets.PGUSER }}' -var 'password=${{ secrets.PGPASSWORD }}' -var 'port=${{ secrets.PGPORT }}' -var 'host=${{ secrets.PGHOST }}' -var 'database=${{ secrets.PGDATABASE }}'
+        run: terraform plan \
+          -var 'username=${{ secrets.PGUSER }}' \
+          -var 'password=${{ secrets.PGPASSWORD }}' \
+          -var 'port=${{ secrets.PGPORT }}' \
+          -var 'host=${{ secrets.PGHOST }}' \
+          -var 'database=${{ secrets.PGDATABASE }}'
 
       - name: Terrafrom Apply
         working-directory: Terraform
-        run: terraform apply -auto-approve -var 'username=${{ secrets.PGUSER }}' -var 'password=${{ secrets.PGPASSWORD }}' -var 'port=${{ secrets.PGPORT }}' -var 'host=${{ secrets.PGHOST }}' -var 'database=${{ secrets.PGDATABASE }}'
+        run: terraform apply -auto-approve \
+          -var 'username=${{ secrets.PGUSER }}' \
+          -var 'password=${{ secrets.PGPASSWORD }}' \
+          -var 'port=${{ secrets.PGPORT }}' \
+          -var 'host=${{ secrets.PGHOST }}' \
+          -var 'database=${{ secrets.PGDATABASE }}'

@@ -4,7 +4,10 @@ on:
     paths:
       - "Terraform/*.tf"
       - "Terraform/*.tf.json"
-    branches-ignore:
+    branches:
+      - "!main"
+  pull_request:
+    branches:
       - main
 
 jobs:
@@ -28,6 +31,11 @@ jobs:
         working-directory: Terraform
         run: terraform init
 
-      - name: Run Validation
+      - name: Terraform Plan
         working-directory: Terraform
-        run: terraform validate
+        run: terraform plan \
+          -var 'username=${{ secrets.PGUSER }}' \
+          -var 'password=${{ secrets.PGPASSWORD }}' \
+          -var 'port=${{ secrets.PGPORT }}' \
+          -var 'host=${{ secrets.PGHOST }}' \
+          -var 'database=${{ secrets.PGDATABASE }}'

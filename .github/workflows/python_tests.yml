@@ -4,7 +4,11 @@ on:
     paths:
       - "src/**"
       - "test/**"
-    branches-ignore:
+      - "requirements.txt"
+    branches:
+      - "!main"
+  pull_request:
+    branches:
       - main
 
 jobs:
