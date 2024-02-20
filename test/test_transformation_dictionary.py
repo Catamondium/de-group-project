@@ -134,29 +134,29 @@ def test_purchase_order_transformation():
     ]
 
     # Apply transformation
-    transf_df = purchase_order_transformation(df)
+    new_df = purchase_order_transformation(df)
 
     # Verify transformation results
-    assert all(column in transf_df.columns
+    assert all(column in new_df.columns
                for column in expected_columns), \
         "Not all expected columns are present after transformation."
 
     # Check if 'purchase_order_id' was duplicated correctly
     assert (
-        transf_df['purchase_order_id'] == transf_df['purchase_record_id']
+        new_df['purchase_order_id'] == new_df['purchase_record_id']
     ).all(), \
         "purchase_order_id was not correctly duplicated to purchase_record_id."
 
     # Check renaming and splitting operations
-    assert 'staff_record_id' in transf_df.columns, \
+    assert 'staff_record_id' in new_df.columns, \
         "staff_id was not renamed to staff_record_id."
-    assert 'counterparty_record_id' in transf_df.columns, \
+    assert 'counterparty_record_id' in new_df.columns, \
         "counterparty_id was not renamed to counterparty_record_id."
-    assert 'currency_record_id' in transf_df.columns, \
+    assert 'currency_record_id' in new_df.columns, \
         "currency_id was not renamed to currency_record_id."
-    assert ('created_date' in transf_df.columns
-            and 'created_time' in transf_df.columns), \
+    assert ('created_date' in new_df.columns
+            and 'created_time' in new_df.columns), \
         "created_at was not correctly split."
-    assert ('last_updated_date' in transf_df.columns
-            and 'last_updated_time' in transf_df.columns), \
+    assert ('last_updated_date' in new_df.columns
+            and 'last_updated_time' in new_df.columns), \
         "last_updated was not correctly split."
