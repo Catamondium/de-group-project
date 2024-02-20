@@ -3,11 +3,10 @@ from src.transform_currency_table import transform_currency
 
 
 def test_map_code_to_name():
-    pqt_file = "./test/parquet_test_file"
+    pqt_file = "./test/parquet_test_file/currency.pqt"
     df = pd.read_parquet(pqt_file, engine="pyarrow")
 
     update_df = transform_currency(df)
-
     ts = pd.Timestamp("2022-11-03T14:20:49.962")
     time = ts.time()
     date = ts.date()
