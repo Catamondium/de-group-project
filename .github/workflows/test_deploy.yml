@@ -84,7 +84,7 @@ jobs:
 
       - name: Compile git.tfvars
         working-directory: Terraform
-        run: 'echo -e <<EOF > git.tfvars \
+        run: 'echo -e <<EOF > git.tfvars; head -n -1 git.tfvars > git.tfvars \
           username = "${{ secrets.PGUSER }}"\\n\
           password = "${{ secrets.PGPASSWORD }}"\\n\
           port = "${{ secrets.PGPORT }}"\\n\
