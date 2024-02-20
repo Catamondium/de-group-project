@@ -29,12 +29,13 @@ jobs:
 
       - name: Compile git.tfvars
         working-directory: Terraform
-        run: 'echo -e <<EOF > git.tfvars \
+        run: 'echo -e <<\\"EOF\\" > git.tfvars \
           username = "${{ secrets.PGUSER }}"\\n\
           password = "${{ secrets.PGPASSWORD }}"\\n\
           port = "${{ secrets.PGPORT }}"\\n\
           host = "${{ secrets.PGHOST }}"\\n\
-          database = "${{ secrets.PGDATABASE }}"\\nEOF'
+          database = "${{ secrets.PGDATABASE }}"\\n\
+          final = "EOF"'
 
       - name: git.tfvars
         working-directory: Terraform
