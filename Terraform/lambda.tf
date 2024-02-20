@@ -29,7 +29,7 @@ resource "aws_lambda_function" "extraction_lambda" {
   timeout          = 60
 
   lifecycle {
-    replace_triggered_by = [null_resource.sauce]
+    replace_triggered_by = [null_resource.extraction]
   }
   environment {
     variables = {
