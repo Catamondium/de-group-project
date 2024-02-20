@@ -1,4 +1,6 @@
-from extractor import lambda_handler, rows_to_dict, upload_parquet, extract
+from extractor import get_last_updated_time, lambda_handler
+from extractor import rows_to_dict, upload_parquet
+from extractor import extract, write_current_time
 from moto import mock_aws
 import pandas as pd
 from unittest.mock import Mock, patch
@@ -22,6 +24,9 @@ class SAME_DF:
 
 class TestRowstoDict:
     def test_empty(self):
+        """
+        rows to dict all empties test
+        """
         items = []
         columns = []
         expected = []
@@ -31,6 +36,9 @@ class TestRowstoDict:
         assert actual == expected
 
     def test_single(self):
+        """
+        rows to dict single item single column test
+        """
         items = [[1]]
         columns = [{"name": "a"}]
         expected = [{"a": 1}]
@@ -40,6 +48,9 @@ class TestRowstoDict:
         assert actual == expected
 
     def test_multiple(self):
+        """
+        rows to dict full table test
+        """
         items = [[1, 2, "AAA"], [4, 5, "BBB"]]
         columns = [{"name": "a"}, {"name": "b"}, {"name": "c"}]
         expected = [{"a": 1, "b": 2, "c": "AAA"}, {"a": 4, "b": 5, "c": "BBB"}]
@@ -52,7 +63,7 @@ class TestRowstoDict:
 @inhibit_CI
 @pytest.fixture(scope="function")
 def mockdb_creds():
-    """Mocked AWS Credentials for moto."""
+    """Mocked Database Credentials for local testing."""
 
     config = ConfigParser()
     config.read(".env.ini")
@@ -77,12 +88,18 @@ def aws_credentials():
 
 @pytest.fixture(scope="function")
 def s3(aws_credentials):
+    """
+    S3 client fixture, presents an S3 client
+    """
     with mock_aws():
         yield boto3.client("s3")
 
 
 @mock_aws
 def test_upload_parquet(s3):
+    """
+    tests upload_parquet functionality
+    """
     bucket = "test-bucket"
     key = "test.parquet"
 
@@ -104,6 +121,9 @@ def test_upload_parquet(s3):
 
 @patch("extractor.upload_parquet")
 def test_extract(upload):
+    """
+    tests mocked db extraction
+    """
     client = "s3"
     datestring = "2024-02-13T10:45:18"
 
@@ -126,14 +146,19 @@ def test_extract(upload):
 
 
 @mock_aws
+@patch("extractor.get_last_updated_time")
 @patch("extractor.client")
 @patch("extractor.extract")
 @patch("extractor.pg.Connection")
-def test_lambda_handler(conn, MockExtract, client):
+def test_lambda_handler(conn, MockExtract, client, get_last_updated_time):
+    """
+    tests mocked db lambda handler
+    """
     time = datetime.strptime("2024-02-13T10:45:18Z",
                              "%Y-%m-%dT%H:%M:%SZ")
 
     connMock = Mock()
+    get_last_updated_time.return_value = "2024-01-01 00:00:00.000000"
 
     event = {"time": "2024-02-13T10:45:18Z"}
     context = ""
@@ -154,6 +179,9 @@ def test_lambda_handler(conn, MockExtract, client):
 @mock_aws
 @inhibit_CI
 def test_integrate(s3, mockdb_creds):
+    """
+    tests local db lambda handler
+    """
     TABLES = ["currency",
               "payment",
               "department",
@@ -178,7 +206,7 @@ def test_integrate(s3, mockdb_creds):
     print(objects)
     files = [file['Key'] for file in objects['Contents']]
 
-    assert len(files) == 5
+    assert len(files) == 11
 
     for table in TABLES:
         expected_file_name = f'2024-01-01T10:45:18/{table}.pqt'
@@ -195,3 +223,54 @@ def test_integrate(s3, mockdb_creds):
         for i, row in enumerate(existing_table):
             print(i, row, expected_table[i], "<<<<<<<<<<<<<<< ROWS")
             assert len(row) == len(expected_table[i]) + 1
+
+
+@mock_aws
+def test_read_last_updated(s3):
+    bucket = "control_bucket"
+    string = "AAAAAAA"
+
+    s3.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+    )
+
+    s3.put_object(
+        Bucket=bucket, Key="last_successful_extraction.txt", Body=str(string))
+
+    actual = get_last_updated_time()
+
+    assert actual == string
+
+
+@mock_aws
+def test_read_last_updated_none(s3):
+    bucket = "control_bucket"
+    string = None
+
+    s3.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+    )
+
+    actual = get_last_updated_time()
+
+    assert actual == string
+
+
+@mock_aws
+@patch("extractor.client")
+def test_write_last_updated_success(client):
+    bucket = "control_bucket"
+    string = "AAAAA"
+
+    mockclient = Mock()
+
+    client.return_value = mockclient
+
+    mockclient.put_object.return_value = None
+
+    write_current_time(string)
+
+    mockclient.put_object.assert_called_with(
+        Bucket=bucket, Key="last_successful_extraction.txt", Body=string)

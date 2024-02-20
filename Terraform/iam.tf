@@ -1,5 +1,5 @@
 resource "aws_iam_role" "extraction_lambda_role" {
-    /*
+  /*
     Creates an IAM role for the Lambda function to assume.
     Args:
     assume_role_policy (str): The JSON-encoded IAM policy document specifying who can assume the role.
@@ -29,24 +29,26 @@ resource "aws_iam_role" "extraction_lambda_role" {
 
 
 data "aws_iam_policy_document" "put_s3_document" {
-    /*
+  /*
     Generates an IAM policy document for putting documents into an S3 bucket.
 
     Args:
         actions (list): The list of actions allowed by the policy.
         resources (list): The list of resources to which the policy applies.
     */
-statement {
+  statement {
     actions = ["s3:PutObject", "s3:ListBucket", "s3:GetObject"]
     resources = [
       "${aws_s3_bucket.rannoch-s3-ingestion-bucket.arn}/*",
-      "${aws_s3_bucket.rannoch-s3-ingestion-bucket.arn}"
+      "${aws_s3_bucket.rannoch-s3-ingestion-bucket.arn}",
+      "${data.aws_s3_bucket.utility_bucket.arn}/*",
+      "${data.aws_s3_bucket.utility_bucket.arn}"
     ]
   }
 }
 
 data "aws_iam_policy_document" "cw_document" {
-    /*
+  /*
     Generates an IAM policy document for CloudWatch Logs.
 
     Args:
@@ -71,7 +73,7 @@ data "aws_iam_policy_document" "cw_document" {
 }
 
 resource "aws_lambda_permission" "allow_cloudwatch" {
-    /*
+  /*
     Grants permission for CloudWatch Events to invoke a Lambda function.
 
     Args:
@@ -88,13 +90,13 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.extraction_lambda.function_name
   principal     = "events.amazonaws.com"
-  source_arn = aws_cloudwatch_event_rule.every_five_minutes.arn
+  source_arn    = aws_cloudwatch_event_rule.every_five_minutes.arn
 }
 
 
 
 resource "aws_iam_policy" "s3_policy" {
-    /*
+  /*
     Creates an IAM policy using the specified IAM policy document.
 
     Args:
@@ -109,7 +111,7 @@ resource "aws_iam_policy" "s3_policy" {
 }
 
 resource "aws_iam_policy" "cloudwatch_policy" {
-    /*
+  /*
     Creates an IAM policy using the specified IAM policy document.
 
     Args:
@@ -124,7 +126,7 @@ resource "aws_iam_policy" "cloudwatch_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
-    /*
+  /*
     Attaches an IAM policy to an IAM role.
 
     Args:
@@ -139,7 +141,7 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_cw_policy_attachment" {
-    /*
+  /*
     Attaches an IAM policy to an IAM role.
 
     Args:
