@@ -106,5 +106,57 @@ def test_payment_transformation_renames_columns():
 
 
 def test_purchase_order_transformation():
-    purchase_order_transformation(2)
-    assert True
+    # Test data setup
+    test_data = {
+        'purchase_order_id': [1, 2],
+        'created_at': ['2024-01-01 12:00:00', '2024-01-02 13:00:00'],
+        'last_updated': ['2024-01-03 14:00:00', '2024-01-04 15:00:00'],
+        'staff_id': [101, 102],
+        'counterparty_id': [201, 202],
+        'item_code': ['X123', 'Y456'],
+        'item_quantity': [10, 20],
+        'item_unit_price': [100.0, 200.0],
+        'currency_id': [1, 2],
+        'agreed_delivery_date': ['2024-02-01', '2024-02-02'],
+        'agreed_payment_date': ['2024-03-01', '2024-03-02'],
+        'agreed_delivery_location_id': [301, 302]
+    }
+    df = pd.DataFrame(test_data)
+
+    # Expected columns after transformation
+    expected_columns = [
+        'purchase_record_id', 'purchase_order_id', 'created_date',
+        'created_time', 'last_updated_date', 'last_updated_time',
+        'staff_record_id', 'counterparty_record_id',
+        'item_code', 'item_quantity', 'item_unit_price',
+        'currency_record_id', 'agreed_delivery_date',
+        'agreed_payment_date', 'agreed_delivery_location_id'
+    ]
+
+    # Apply transformation
+    transf_df = purchase_order_transformation(df)
+
+    # Verify transformation results
+    assert all(column in transf_df.columns
+               for column in expected_columns), \
+        "Not all expected columns are present after transformation."
+
+    # Check if 'purchase_order_id' was duplicated correctly
+    assert (
+        transf_df['purchase_order_id'] == transf_df['purchase_record_id']
+    ).all(), \
+        "purchase_order_id was not correctly duplicated to purchase_record_id."
+
+    # Check renaming and splitting operations
+    assert 'staff_record_id' in transf_df.columns, \
+        "staff_id was not renamed to staff_record_id."
+    assert 'counterparty_record_id' in transf_df.columns, \
+        "counterparty_id was not renamed to counterparty_record_id."
+    assert 'currency_record_id' in transf_df.columns, \
+        "currency_id was not renamed to currency_record_id."
+    assert ('created_date' in transf_df.columns
+            and 'created_time' in transf_df.columns), \
+        "created_at was not correctly split."
+    assert ('last_updated_date' in transf_df.columns
+            and 'last_updated_time' in transf_df.columns), \
+        "last_updated was not correctly split."

@@ -49,27 +49,37 @@ def payment_transformation(df):
 
 def purchase_order_transformation(df):
     # purchase_order_id RENAME  purchase_record_id
-    # AND DUPLICATE to          purchase_order_id
-
+    # AND DUPLICATE
+    df['purchase_record_id'] = df['purchase_order_id']
     # created_at SPLIT TO created_date, created_time
-
+    df = split_time(df, 'created_at',
+                    'created_date',
+                    'created_time')
     # last_updated SPLIT TO last_updated_date, last_updated_time
-    # staff_id
-    # counterparty_id
-    # item_code
-    # item_quantity
-    # item_unit_price
-    # currency_id
-    # agreed_delivery_date
-    # agreed_payment_date
-    # agreed_delivery_location_id
+    df = split_time(df, 'last_updated',
+                    'last_updated_date',
+                    'last_updated_time')
+    # staff_id RENAME TO staff_record_id
+    df.rename(columns={'staff_id': 'staff_record_id'},
+              inplace=True)
+    # counterparty_id RENAME TO counterparty_record_id
+    df.rename(columns={'counterparty_id': 'counterparty_record_id'},
+              inplace=True)
+    # item_code - OK
+    # item_quantity - OK
+    # item_unit_price - OK
+    # currency_id -RENAME TO currency_record_id
+    df.rename(columns={'currency_id': 'currency_record_id'},
+              inplace=True)
+    # agreed_delivery_date - OK
+    # agreed_payment_date - OK
+    # agreed_delivery_location_id - OK
 
+    # ✅️ result df should contain columns:
     # purchase_record_id
     # purchase_order_id
-
     # created_date
     # created_time
-
     # last_updated_date
     # last_updated_time
     # staff_record_id
@@ -82,9 +92,10 @@ def purchase_order_transformation(df):
     # agreed_payment_date
     # agreed_delivery_location_id
 
-    return 0
+    return df
 
 
 tables_transformation_templates = {
-    "payment_transformation": payment_transformation,
+    "payment": payment_transformation,
+    "purchase_order": purchase_order_transformation,
 }
