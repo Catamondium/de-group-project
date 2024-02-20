@@ -82,24 +82,28 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_SECRET_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      - name: Compile git.tfvars
+        working-directory: Terraform
+        run: 'cat <<EOF > git.tfvars \
+          username = "${{ secrets.PGUSER }}"\n\
+          password = "${{ secrets.PGPASSWORD }}"\n\
+          port = "${{ secrets.PGPORT }}"\n\
+          host = "${{ secrets.PGHOST }}"\n\
+          database = "${{ secrets.PGDATABASE }}"\n\
+          EOF'
+
+      - name: git.tfvars
+        working-directory: Terraform
+        run: cat git.tfvars
+
       - name: Terraform Init
         working-directory: Terraform
         run: terraform init
 
       - name: Terraform Plan
         working-directory: Terraform
-        run: terraform plan \
-          -var 'username=${{ secrets.PGUSER }}' \
-          -var 'password=${{ secrets.PGPASSWORD }}' \
-          -var 'port=${{ secrets.PGPORT }}' \
-          -var 'host=${{ secrets.PGHOST }}' \
-          -var 'database=${{ secrets.PGDATABASE }}'
+        run: terraform plan -var-file git.tfvars
 
       - name: Terrafrom Apply
         working-directory: Terraform
-        run: terraform apply -auto-approve \
-          -var 'username=${{ secrets.PGUSER }}' \
-          -var 'password=${{ secrets.PGPASSWORD }}' \
-          -var 'port=${{ secrets.PGPORT }}' \
-          -var 'host=${{ secrets.PGHOST }}' \
-          -var 'database=${{ secrets.PGDATABASE }}'
+        run: terraform apply -auto-approve -var-file git.tfvars
