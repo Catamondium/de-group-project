@@ -1,7 +1,8 @@
 import pandas as pd
-from transformation_dictionary import (split_time,
-                                       payment_transformation,
-                                       purchase_order_transformation)
+from src.transformation_dictionary import (split_time,
+                                           payment_transformation,
+                                           purchase_order_transformation,
+                                           sales_order_transformation)
 
 
 def test_split_time():
@@ -16,7 +17,9 @@ def test_split_time():
     df = pd.DataFrame(test_data)
 
     # ACT
-    result_df = split_time(df, 'datetime_col', 'date', 'time')
+    result_df = split_time(df,
+                           'datetime_col',
+                           'date', 'time')
 
     # ASSERT
     assert all(result_df['date'] == expected_date), \
@@ -143,7 +146,7 @@ def test_purchase_order_transformation():
 
     # Check if 'purchase_order_id' was duplicated correctly
     assert (
-        new_df['purchase_order_id'] == new_df['purchase_record_id']
+            new_df['purchase_order_id'] == new_df['purchase_record_id']
     ).all(), \
         "purchase_order_id was not correctly duplicated to purchase_record_id."
 
@@ -159,4 +162,63 @@ def test_purchase_order_transformation():
         "created_at was not correctly split."
     assert ('last_updated_date' in new_df.columns
             and 'last_updated_time' in new_df.columns), \
+        "last_updated was not correctly split."
+
+
+def test_sales_order_transformation():
+    # Test data setup
+    test_data = {
+        'sales_order_id': [1, 2],
+        'created_at': ['2024-01-01 12:00:00', '2024-01-02 13:00:00'],
+        'last_updated': ['2024-01-03 14:00:00', '2024-01-04 15:00:00'],
+        'design_id': [101, 102],
+        'staff_id': [201, 202],
+        'counterparty_id': [301, 302],
+        'currency_id': [1, 2],
+        'agreed_delivery_date': ['2024-02-01', '2024-02-02'],
+        'agreed_payment_date': ['2024-03-01', '2024-03-02'],
+        'agreed_delivery_location_id': [401, 402],
+        'units_sold': [10, 20],
+        'unit_price': [100.0, 200.0]
+    }
+    df = pd.DataFrame(test_data)
+
+    # Expected columns after transformation
+    expected_columns = [
+        'sales_record_id', 'sales_order_id', 'created_date', 'created_time',
+        'last_updated_date', 'last_updated_time', 'design_record_id',
+        'sales_staff_id',
+        'counterparty_record_id', 'currency_record_id', 'units_sold',
+        'unit_price',
+        'agreed_payment_date', 'agreed_delivery_date',
+        'agreed_delivery_location_id'
+    ]
+
+    # Apply transformation
+    transformed_df = sales_order_transformation(df)
+
+    # Verify transformation results
+    assert all(column in transformed_df.columns for column in
+               expected_columns), \
+        "Not all expected columns are present after transformation."
+
+    # Check if 'sales_order_id' was duplicated correctly
+    assert (transformed_df['sales_order_id'] == transformed_df[
+        'sales_record_id']).all(), \
+        "sales_order_id was not correctly duplicated to sales_record_id."
+
+    # Check renaming and splitting operations
+    assert 'design_record_id' in transformed_df.columns, \
+        "design_id was not renamed to design_record_id."
+    assert 'sales_staff_id' in transformed_df.columns, \
+        "staff_id was not renamed to sales_staff_id."
+    assert 'counterparty_record_id' in transformed_df.columns, \
+        "counterparty_id was not renamed to counterparty_record_id."
+    assert 'currency_record_id' in transformed_df.columns, \
+        "currency_id was not renamed to currency_record_id."
+    assert ('created_date' in transformed_df.columns
+            and 'created_time' in transformed_df.columns), \
+        "created_at was not correctly split."
+    assert ('last_updated_date' in transformed_df.columns
+            and 'last_updated_time' in transformed_df.columns), \
         "last_updated was not correctly split."
