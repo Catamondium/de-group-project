@@ -1,3 +1,5 @@
+from urllib.request import urlopen
+from json import loads
 import pandas as pd
 
 
@@ -15,14 +17,10 @@ def payment_transformation(df):
     # DUPLICATE payment_id
     df["payment_record_id"] = df["payment_id"]
     # created_at - SPLIT
-    df = split_time(df, "created_at",
-                    "created_date",
-                    "created_time")
+    df = split_time(df, "created_at", "created_date", "created_time")
     # last_updated - SPLIT
     df = split_time(
-        df, "last_updated",
-        "last_updated_date",
-        "last_updated_time"
+        df, "last_updated", "last_updated_date", "last_updated_time"
     )
     # transaction_id - RENAME TO transaction_record_id
     df.rename(
@@ -53,14 +51,10 @@ def purchase_order_transformation(df):
     # AND DUPLICATE
     df["purchase_record_id"] = df["purchase_order_id"]
     # created_at SPLIT TO created_date, created_time
-    df = split_time(df, "created_at",
-                    "created_date",
-                    "created_time")
+    df = split_time(df, "created_at", "created_date", "created_time")
     # last_updated SPLIT TO last_updated_date, last_updated_time
     df = split_time(
-        df, "last_updated",
-        "last_updated_date",
-        "last_updated_time"
+        df, "last_updated", "last_updated_date", "last_updated_time"
     )
     # staff_id RENAME TO staff_record_id
     df.rename(columns={"staff_id": "staff_record_id"}, inplace=True)
@@ -102,14 +96,10 @@ def sales_order_transformation(df):
     # sales_order_id DUPL sales_record_id, sales_order_id
     df["sales_record_id"] = df["sales_order_id"]
     # created_at SPLIT TO created_date, created_time
-    df = split_time(df, "created_at",
-                    "created_date",
-                    "created_time")
+    df = split_time(df, "created_at", "created_date", "created_time")
     # last_updated SPLIT TO last_updated_date, last_updated_time
     df = split_time(
-        df, "last_updated",
-        "last_updated_date",
-        "last_updated_time"
+        df, "last_updated", "last_updated_date", "last_updated_time"
     )
     # design_id RENAME design_record_id
     # staff_id RENAME sales_staff_id
@@ -151,8 +141,137 @@ def sales_order_transformation(df):
     return df
 
 
+def transform_address_table(df):
+    df["last_updated_date"] = df["last_updated"].dt.date
+    df["last_updated_time"] = df["last_updated"].dt.time
+    df["location_record_id"] = df["address_id"]
+
+    df.drop(
+        columns=[
+            "last_updated",
+            "created_at",
+        ],
+        inplace=True,
+    )
+
+    return df
+
+
+def transform_counterparty_table(df):
+
+    df["last_updated_date"] = df["last_updated"].dt.date
+    df["last_updated_time"] = df["last_updated"].dt.time
+
+    df["counterparty_record_id"] = df["counterparty_id"]
+
+    rename_dict = {
+        "address_line_1": "counterparty_legal_address_line_1",
+        "address_line_2": "counterparty_legal_address_line_2",
+        "district": "counterparty_legal_district",
+        "city": "counterparty_legal_city",
+        "postal_code": "counterparty_legal_postal_code",
+        "country": "counterparty_legal_country",
+        "phone": "counterparty_legal_phone_number",
+    }
+    df.rename(columns=rename_dict, inplace=True)
+
+    df.drop(
+        columns=[
+            "last_updated",
+            "created_at",
+            "legal_address_id",
+            "commercial_contact",
+            "delivery_contact",
+        ],
+        inplace=True,
+    )
+    return df
+
+
+def transform_currency(df):
+    url = "https://raw.githubusercontent.com/umpirsky/currency-list/master/data/en_GB/currency.json"  # noqa
+    response = urlopen(url)
+
+    json_raw = response.read().decode("utf-8")
+    currencies = loads(json_raw)
+
+    curr_ls = [
+        {
+            "currency_code": k,
+            "currency_name": v,
+        }
+        for k, v in currencies.items()
+    ]
+
+    currency_df = pd.DataFrame(data=curr_ls)
+
+    df = df.merge(currency_df, how="left", on="currency_code", validate="m:1")
+
+    df["last_updated_date"] = df["last_updated"].dt.date
+    df["last_updated_time"] = df["last_updated"].dt.time
+
+    df.drop(columns=["last_updated", "created_at"], inplace=True)
+
+    return df
+
+
+def transform_design_table(df):
+    df["last_updated_date"] = df["last_updated"].dt.date
+    df["last_updated_time"] = df["last_updated"].dt.time
+    df["design_record_id"] = df["design_id"]
+    df.drop(columns=["last_updated", "created_at"], inplace=True)
+
+    return df
+
+
+def transform_payment_type_table(df):
+    df["last_updated_date"] = df["last_updated"].dt.date
+    df["last_updated_time"] = df["last_updated"].dt.time
+    df["payment_type_record_id"] = df["payment_type_id"]
+    df["payment_record_id"] = df["payment_type_id"]
+    df.drop(
+        columns=["last_updated", "created_at", "payment_type_id"], inplace=True
+    )
+    return df
+
+
+def transform_staff_table(df):
+    df["last_updated_date"] = df["last_updated"].dt.date
+    df["last_updated_time"] = df["last_updated"].dt.time
+
+    df["staff_record_id"] = df["staff_id"]
+
+    df.drop(
+        columns=["last_updated", "created_at", "department_id"], inplace=True
+    )
+    return df
+
+
+def transform_transaction_table(df):
+    df["last_updated_date"] = df["last_updated"].dt.date
+    df["last_updated_time"] = df["last_updated"].dt.time
+    df["transaction_record_id"] = df["transaction_id"]
+
+    df.drop(
+        columns=[
+            "last_updated",
+            "created_at",
+        ],
+        inplace=True,
+    )
+
+    return df
+
+
 tables_transformation_templates = {
     "payment": payment_transformation,
     "purchase_order": purchase_order_transformation,
     "sales_order": sales_order_transformation,
+    "address": transform_address_table,
+    "counterparty": transform_counterparty_table,
+    "currency": transform_currency,
+    "design": transform_design_table,
+    "payment_type": transform_payment_type_table,
+    "staff": transform_staff_table,
+    "transaction": transform_transaction_table,
 }
