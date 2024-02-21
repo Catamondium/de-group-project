@@ -26,6 +26,61 @@ TABLES = [
 ]
 
 
+def get_query(table: str, since: str) -> str:
+    """
+    Generates a SQL query string for a given table and the last
+    successful update time.
+
+    The function returns a SELECT query that fetches records from
+    the specified table which have been updated on or after the last
+    successful update time. It accounts for various relationships
+    between the 'table' and other related tables to fetch the updated
+    records. If the table name doesn't match any predefined tables,
+    it returns a default query.
+
+    Parameters:
+    - table (str): The name of the table for which the
+        query is to be generated.
+    - last_successful_update_time (str): The timestamp of the last
+        successful update in the format 'YYYY-MM-DD HH:MM:SS.ssssss'.
+
+    Returns:
+    - str: A SQL query string.
+    """
+    queries = {
+            "staff": '''SELECT t.staff_id, t.first_name, t.last_name,
+            t.email_address, t.last_updated, d.department_name, d.location
+            FROM staff as t
+            LEFT JOIN department d ON t.department_id = d.department_id
+            ''',
+            "counterparty": '''
+            SELECT t.counterparty_id, t.counterparty_legal_name,
+            a.address_line_1 AS counterparty_legal_address_line_1,
+            a.address_line_2 AS counterparty_legal_address_line_2,
+            a.district AS counterparty_legal_district,
+            a.city AS counterparty_legal_city,
+            a.postal_code AS counterparty_legal_postal_code,
+            a.country AS counterparty_legal_country,
+            a.phone AS counterparty_legal_phone_number,
+            t.last_updated
+            FROM counterparty t
+            LEFT JOIN address a on t.legal_address_id = a.address_id
+            ''',
+            # default
+            "default": f'''
+                SELECT * FROM {pg.identifier(table)} as t
+                '''
+    }
+    if since is not None:
+        ending_suffix = f"WHERE t.last_updated >= {pg.literal(since)};"
+    else:
+        ending_suffix = ';'
+    if table in ['staff', 'counterparty']:
+        return f"{queries[table]}{ending_suffix}"
+    else:
+        return f"{queries['default']}{ending_suffix}"
+
+
 def extract(client, conn: pg.Connection, bucket, table, time, since):
     """
     Extracts data from a PostgreSQL database table
@@ -50,23 +105,10 @@ def extract(client, conn: pg.Connection, bucket, table, time, since):
 
     """
     logger.info(f"extracting {table}")
-
-    if since is not None:
-        sql = f"""
-            SELECT *
-            FROM {pg.identifier(table)}
-            WHERE last_updated >= {pg.literal(since)}
-            """
-    else:
-        sql = f"""
-            SELECT *
-            FROM {pg.identifier(table)}
-            """
-
+    sql = get_query(table, since)
     rows = conn.run(sql)
     if len(rows) > 0:
         timestring = time.strftime("%Y-%m-%dT%H:%M:%S")
-
         data = rows_to_dict(rows, conn.columns)
         df = pd.DataFrame(data=data)
         key = f"{timestring}/{table}.pqt"

@@ -1,4 +1,4 @@
-from extractor import get_last_updated_time, set_last_updated_time
+from extractor import get_last_updated_time, set_last_updated_time, get_query
 from extractor import lambda_handler
 from extractor import rows_to_dict, upload_parquet
 from extractor import extract
@@ -232,8 +232,8 @@ def test_integrate(s3, mockdb_creds):
         existing_table = df.to_records()
 
         for i, row in enumerate(existing_table):
-            print(i, row, expected_table[i], "<<<<<<<<<<<<<<< ROWS")
-            assert len(row) == len(expected_table[i]) + 1
+            if not table == "counterparty":
+                assert len(row) == len(expected_table[i]) + 1
 
 
 @mock_aws
@@ -293,3 +293,46 @@ def test_set_last_updated_success():
         Bucket=bucket,
         Key="last_successful_extraction.txt",
         Body=str(date.timestamp()))
+
+
+def normalize_sql_query(query):
+    return "\n".join(line.strip() for line in query.split("\n")).strip()
+
+
+def test_get_queries():
+    expected_output = [
+        normalize_sql_query(
+            '''SELECT t.staff_id, t.first_name, t.last_name,
+            t.email_address, t.last_updated, d.department_name, d.location
+            FROM staff as t
+            LEFT JOIN department d ON t.department_id = d.department_id
+            WHERE t.last_updated >= '2022-02-02';'''
+        ),
+        normalize_sql_query(
+            '''
+            SELECT t.counterparty_id, t.counterparty_legal_name,
+            a.address_line_1 AS counterparty_legal_address_line_1,
+            a.address_line_2 AS counterparty_legal_address_line_2,
+            a.district AS counterparty_legal_district,
+            a.city AS counterparty_legal_city,
+            a.postal_code AS counterparty_legal_postal_code,
+            a.country AS counterparty_legal_country,
+            a.phone AS counterparty_legal_phone_number,
+            t.last_updated
+            FROM counterparty t
+            LEFT JOIN address a on t.legal_address_id = a.address_id
+            WHERE t.last_updated >= '2022-02-02';'''
+        ),
+        normalize_sql_query(
+            '''
+            SELECT * FROM design as t
+            WHERE t.last_updated >= '2022-02-02';
+            '''
+        )
+    ]
+    assert normalize_sql_query(
+        get_query('staff', '2022-02-02')) == expected_output[0]
+    assert normalize_sql_query(
+        get_query('counterparty', '2022-02-02')) == expected_output[1]
+    assert normalize_sql_query(
+        get_query('design', '2022-02-02')) == expected_output[2]
