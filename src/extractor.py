@@ -26,7 +26,7 @@ TABLES = [
 ]
 
 
-def get_query(table: str, since: str) -> str:
+def get_query(table: str, since: datetime) -> str:
     """
     Generates a SQL query string for a given table and the last
     successful update time.
@@ -41,19 +41,19 @@ def get_query(table: str, since: str) -> str:
     Parameters:
     - table (str): The name of the table for which the
         query is to be generated.
-    - last_successful_update_time (str): The timestamp of the last
-        successful update in the format 'YYYY-MM-DD HH:MM:SS.ssssss'.
+    - last_successful_update_time (datetime): The timestamp of the last
+        successful update
 
     Returns:
     - str: A SQL query string.
     """
     queries = {
-            "staff": '''SELECT t.*,
+        "staff": '''SELECT t.*,
             d.department_name, d.location
             FROM staff as t
             LEFT JOIN department d ON t.department_id = d.department_id
             ''',
-            "counterparty": '''
+        "counterparty": '''
             SELECT t.*,
             a.address_line_1,
             a.address_line_2,
@@ -65,8 +65,8 @@ def get_query(table: str, since: str) -> str:
             FROM counterparty t
             LEFT JOIN address a on t.legal_address_id = a.address_id
             ''',
-            # default
-            "default": f'''
+        # default
+        "default": f'''
                 SELECT * FROM {pg.identifier(table)} as t
                 '''
     }
@@ -100,7 +100,7 @@ def extract(client, conn: pg.Connection, bucket, table, time, since):
         the time from which data should be extracted.
 
     Returns:
-         None
+        None
 
     """
     logger.info(f"extracting {table}")
@@ -171,6 +171,7 @@ def lambda_handler(event, context):
 
     except Exception as e:
         logger.error(e)
+        raise e
 
 
 def upload_parquet(client, bucket, key, data):
@@ -221,7 +222,7 @@ def rows_to_dict(items, columns):
     return accumulator
 
 
-def get_last_updated_time(s3):
+def get_last_updated_time(s3) -> datetime | None:
     bucket = environ.get("S3_CONTROL_BUCKET", "control_bucket")
 
     try:
@@ -241,12 +242,9 @@ def get_last_updated_time(s3):
 
 def set_last_updated_time(s3, current_time: datetime):
     bucket = environ.get("S3_CONTROL_BUCKET", "control_bucket")
-    try:
-        s3.put_object(
-            Bucket=bucket,
-            Key="last_successful_extraction.txt",
-            Body=str(current_time.timestamp())
-        )
-        # print("time successfully written")
-    except Exception as e:
-        logger.error(f"Error writing data to S3: {e}")
+    logger.info("Writing out last extraction time")
+    s3.put_object(
+        Bucket=bucket,
+        Key="last_successful_extraction.txt",
+        Body=str(current_time.timestamp())
+    )
