@@ -184,6 +184,29 @@ def test_lambda_handler(conn,
 
 
 @mock_aws
+@patch("extractor.pg.Connection")
+def test_lambda_handler_exceptions(conn):
+    """
+    tests mocked db lambda handler
+    """
+    time = datetime.fromisoformat("2024-02-13T10:45:18Z")
+    since = datetime.fromisoformat("2024-01-01T00:00:00")
+    # connMock = Mock()
+    get_last_updated_time.return_value = since
+
+    event = {"time": time.isoformat()}
+    context = ""
+
+    get_last_updated_time.return_value = None
+
+    # onn.return_value = connMock
+    # connMock.run.return_value = [["example_table"]]
+
+    with pytest.raises(Exception):
+        lambda_handler(event, context)
+
+
+@mock_aws
 @inhibit_CI
 def test_integrate(s3, mockdb_creds):
     """
