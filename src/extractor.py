@@ -46,7 +46,7 @@ def extract(client, conn: pg.Connection, bucket, table, time, since):
         the time from which data should be extracted.
 
     Returns:
-        None
+         None
 
     """
     logger.info(f"extracting {table}")
