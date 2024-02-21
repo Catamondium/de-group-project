@@ -1,16 +1,16 @@
-from transformation import (
-    # lambda_handler,
+from src.transformation import (
+    lambda_handler,
     upload_parquet,
     get_df_from_parquet,
     get_table_name,
 )
-from moto import mock_aws
+# from src.transformation import tables_transformation_templates
 
+from moto import mock_aws
 import pandas as pd
 from unittest.mock import patch  # , Mock
 import boto3
-
-# from datetime import datetime
+from datetime import datetime
 # from configparser import ConfigParser
 import pytest
 
@@ -36,86 +36,6 @@ def aws_credentials():
 def s3(aws_credentials):
     with mock_aws():
         yield boto3.client("s3")
-
-
-@patch("transformation.get_df_from_parquet")
-@patch("transformation.upload_parquet")
-def test_lambda_handler(get_df_from_parquet, upload_parquet):
-    upload_parquet.side_effect = 0
-    # os.environ['S3_EXTRACT_BUCKET'] = "test"
-
-    data = {
-        "address_id": [1, 2, 3, 4, 5],
-        "address_line_1": [
-            "123 Main Street",
-            "456 Elm Street",
-            "789 Oak Avenue",
-            "1011 Pine Boulevard",
-            "1213 Cedar Lane",
-        ],
-        "address_line_2": [
-            "Suite 100",
-            "Apartment 201",
-            None,
-            "Unit 3B",
-            None,
-        ],
-        "district": [
-            "Downtown",
-            "Uptown",
-            "Midtown",
-            "East Side",
-            "West Side",
-        ],
-        "city": [
-            "New York",
-            "Chicago",
-            "Los Angeles",
-            "Houston",
-            "Philadelphia",
-        ],
-        "postal_code": ["10001", "20002", "30003", "40004", "50005"],
-        "country": ["USA", "USA", "USA", "USA", "USA"],
-        "phone": [
-            "(212) 555-1212",
-            "(312) 555-1213",
-            "(213) 555-1214",
-            "(713) 555-1215",
-            "(215) 555-1216",
-        ],
-        "created_at": [
-            "2023-02-15 12:00:00",
-            "2023-02-16 12:00:00",
-            "2023-02-17 12:00:00",
-            "2023-02-18 12:00:00",
-            "2023-02-19 12:00:00",
-        ],
-        "last_updated": [
-            "2023-02-15 12:00:00",
-            "2023-02-16 12:00:00",
-            "2023-02-17 12:00:00",
-            "2023-02-18 12:00:00",
-            "2023-02-19 12:00:00",
-        ],
-    }
-
-    df = pd.DataFrame(data)
-    get_df_from_parquet.return_value = df
-    # event = {
-    #     "time": "2024-02-13T10:45:18Z",
-    #     "Records": [
-    #         {
-    #             "s3": {
-    #                 "bucket": {"name": "extraction"},
-    #                 "object": {"key": "2024-02-15T19:01:53/address.pqt"},
-    #             }
-    #         }
-    #     ],
-    # }
-    # context = ""
-
-    # a = lambda_handler(event, context)
-    assert True
 
 
 @mock_aws
@@ -172,3 +92,45 @@ def test_get_table_name():
     keys = ["2024-02-15T19:01:53/address.pqt", "2024-02-21/purchase_order.pqt"]
     assert get_table_name(keys[0]) == "address"
     assert get_table_name(keys[1]) == "purchase_order"
+
+
+@patch('src.transformation.upload_parquet')
+@patch('src.transformation.get_df_from_parquet')
+def test_lambda_handler(mock_get_df_from_parquet,
+                        mock_upload_parquet):
+    data = {
+        "address_id": [1, 2, 3],
+        "address_line_1": ["123 Maple Street", "456 Oak Street",
+                           "789 Pine Street"],
+        "address_line_2": ["Apt. 101", "Suite 202", "Room 303"],
+        "district": ["North", "South", "East"],
+        "city": ["Townsville", "Cityplace", "Villageland"],
+        "postal_code": ["12345", "67890", "111213"],
+        "country": ["CountryA", "CountryB", "CountryC"],
+        "phone": ["123-456-7890", "098-765-4321", "456-789-0123"],
+        "created_at": [datetime.now(), datetime.now(), datetime.now()],
+        "last_updated": [datetime.now(), datetime.now(), datetime.now()]
+    }
+    df = pd.DataFrame(data)
+    event = {
+        "time": "2024-02-13T10:45:18Z",
+        "Records": [{
+            "s3": {
+                "bucket": {"name": "extraction"},
+                "object": {"key": "2024-02-15T19:01:53/address.pqt"},
+            }
+        }],
+    }
+    context = {}
+
+    # mocking
+    mock_get_df_from_parquet.return_value = df
+    mock_upload_parquet.return_value = 0
+
+    # ACT
+    res = lambda_handler(event, context)
+    assert res == "Done something"
+
+    (mock_get_df_from_parquet
+     .assert_called_once_with("2024-02-15T19:01:53/address.pqt", "extraction"))
+    mock_upload_parquet.assert_called_once()

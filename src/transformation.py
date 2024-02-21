@@ -16,19 +16,19 @@ def lambda_handler(event, context):
     try:
         bucket_name = event["Records"][0]["s3"]["bucket"]["name"]
         file_key = event["Records"][0]["s3"]["object"]["key"]
-
         table_name = get_table_name(file_key)
 
         if table_name in list(tables_transformation_templates.keys()):
             # read the file - return dataframe
-
             df = get_df_from_parquet(file_key, bucket_name)
-            print(df, "<<<<<<<<<<<<")
-            # transform df
-            # due to template
+            # transform df due to template
             new_df = tables_transformation_templates[table_name](df)
+            print(new_df, "🧨️-🧨-️🧨-️🧨️-🧨️-🧨️")
             upload_parquet(
-                s3, os.environ["S3_TRANSFORMATION_BUCKET"], file_key, new_df
+                s3, os.environ.get("S3_TRANSFORMATION_BUCKET",
+                                   "test_transform_bucket"),
+                file_key,
+                new_df
             )
             return "Done something"
         # save df to parquet_file
