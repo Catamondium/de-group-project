@@ -1,6 +1,7 @@
-from extractor import get_last_updated_time, lambda_handler
+from extractor import get_last_updated_time, set_last_updated_time
+from extractor import lambda_handler
 from extractor import rows_to_dict, upload_parquet
-from extractor import extract, write_current_time
+from extractor import extract
 from moto import mock_aws
 import pandas as pd
 from unittest.mock import Mock, patch
@@ -125,7 +126,7 @@ def test_extract(upload):
     tests mocked db extraction
     """
     client = "s3"
-    datestring = "2024-02-13T10:45:18"
+    datedate = "2024-02-13T10:45:18"
 
     os.environ["S3_EXTRACT_BUCKET"] = "ingestion"
 
@@ -133,35 +134,41 @@ def test_extract(upload):
     conn.run.return_value = [[1, 2, "AAA"], [4, 5, "BBB"]]
     conn.columns = [{"name": "a"}, {"name": "b"}, {"name": "c"}]
     table = "cat"
-    time = datetime.fromisoformat(datestring)
+    time = datetime.fromisoformat(datedate)
 
     df = pd.DataFrame(data=[{"a": 1, "b": 2, "c": "AAA"},
                             {"a": 4, "b": 5, "c": "BBB"}])
 
-    key = f"{datestring}/{table}.pqt"
+    key = f"{datedate}/{table}.pqt"
 
-    extract(client, conn, "ingestion", table, time)
+    extract(client, conn, "ingestion", table, time, time)
 
     upload.assert_called_with(client, "ingestion", key, SAME_DF(df))
 
 
 @mock_aws
+@patch("extractor.set_last_updated_time")
 @patch("extractor.get_last_updated_time")
 @patch("extractor.client")
 @patch("extractor.extract")
 @patch("extractor.pg.Connection")
-def test_lambda_handler(conn, MockExtract, client, get_last_updated_time):
+def test_lambda_handler(conn,
+                        MockExtract,
+                        client,
+                        get_last_updated_time,
+                        set_last_updated_time):
     """
     tests mocked db lambda handler
     """
-    time = datetime.strptime("2024-02-13T10:45:18Z",
-                             "%Y-%m-%dT%H:%M:%SZ")
-
+    time = datetime.fromisoformat("2024-02-13T10:45:18Z")
+    since = datetime.fromisoformat("2024-01-01T00:00:00")
     connMock = Mock()
-    get_last_updated_time.return_value = "2024-01-01 00:00:00.000000"
+    get_last_updated_time.return_value = since
 
-    event = {"time": "2024-02-13T10:45:18Z"}
+    event = {"time": time.isoformat()}
     context = ""
+
+    get_last_updated_time.return_value = None
 
     client.return_value = "s3"
     conn.return_value = connMock
@@ -173,7 +180,7 @@ def test_lambda_handler(conn, MockExtract, client, get_last_updated_time):
                                    connMock,
                                    "ingestion",
                                    "example_table",
-                                   time)
+                                   time, None)
 
 
 @mock_aws
@@ -198,6 +205,10 @@ def test_integrate(s3, mockdb_creds):
     # ACT
     s3.create_bucket(
         Bucket='ingestion',
+        CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+
+    s3.create_bucket(
+        Bucket='control_bucket',
         CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
 
     lambda_handler(event, '')
@@ -228,7 +239,7 @@ def test_integrate(s3, mockdb_creds):
 @mock_aws
 def test_read_last_updated(s3):
     bucket = "control_bucket"
-    string = "AAAAAAA"
+    date = datetime.now()
 
     s3.create_bucket(
         Bucket=bucket,
@@ -236,41 +247,49 @@ def test_read_last_updated(s3):
     )
 
     s3.put_object(
-        Bucket=bucket, Key="last_successful_extraction.txt", Body=str(string))
+        Bucket=bucket,
+        Key="last_successful_extraction.txt",
+        Body=str(date.timestamp()))
 
-    actual = get_last_updated_time()
+    actual = get_last_updated_time(s3)
 
-    assert actual == string
+    assert actual == date
 
 
 @mock_aws
 def test_read_last_updated_none(s3):
     bucket = "control_bucket"
-    string = None
+    date = None
 
     s3.create_bucket(
         Bucket=bucket,
         CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
     )
 
-    actual = get_last_updated_time()
+    actual = get_last_updated_time(s3)
 
-    assert actual == string
+    assert actual == date
 
 
 @mock_aws
-@patch("extractor.client")
-def test_write_last_updated_success(client):
+def test_read_last_updated_reraise(s3):
+
+    with pytest.raises(Exception):
+
+        get_last_updated_time(s3)
+
+
+def test_set_last_updated_success():
     bucket = "control_bucket"
-    string = "AAAAA"
+    date = datetime.now()
 
-    mockclient = Mock()
+    client = Mock()
 
-    client.return_value = mockclient
+    client.put_object().return_value = None
 
-    mockclient.put_object.return_value = None
+    set_last_updated_time(client, date)
 
-    write_current_time(string)
-
-    mockclient.put_object.assert_called_with(
-        Bucket=bucket, Key="last_successful_extraction.txt", Body=string)
+    client.put_object.assert_called_with(
+        Bucket=bucket,
+        Key="last_successful_extraction.txt",
+        Body=str(date.timestamp()))

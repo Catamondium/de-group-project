@@ -29,7 +29,7 @@ resource "aws_s3_object" "lambda_code" {
   source = "${path.module}/../extraction_lambda.zip"
 
   lifecycle {
-    replace_triggered_by = [null_resource.sauce]
+    replace_triggered_by = [null_resource.extraction]
   }
 }
 
