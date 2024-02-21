@@ -8,9 +8,8 @@ import os
 
 
 def lambda_handler(event, context):
-    bucket_name = event['Records'][0]['s3']['bucket']['name']
-    file_key = event['Records'][0]['s3']['object']['key']
-    
+    # bucket_name = event['Records'][0]['s3']['bucket']['name']
+    # file_key = event['Records'][0]['s3']['object']['key']
 
     # read the file - return dataframe
     # df = get_df_from_parquet(file_key)
