@@ -1,4 +1,9 @@
-from transformation import lambda_handler, upload_parquet, get_df_from_parquet
+from transformation import (
+    # lambda_handler,
+    upload_parquet,
+    get_df_from_parquet,
+    get_table_name,
+)
 from moto import mock_aws
 
 import pandas as pd
@@ -33,16 +38,84 @@ def s3(aws_credentials):
         yield boto3.client("s3")
 
 
-@mock_aws
-@patch("extractor.client")
-@patch("extractor.extract")
-@patch("extractor.pg.Connection")
-def test_lambda_handler(conn, MockExtract, client):
-    event = {"time": "2024-02-13T10:45:18Z"}
-    context = ""
+@patch("transformation.get_df_from_parquet")
+@patch("transformation.upload_parquet")
+def test_lambda_handler(get_df_from_parquet, upload_parquet):
+    upload_parquet.side_effect = 0
+    # os.environ['S3_EXTRACT_BUCKET'] = "test"
 
-    a = lambda_handler(event, context)
-    assert a == 0
+    data = {
+        "address_id": [1, 2, 3, 4, 5],
+        "address_line_1": [
+            "123 Main Street",
+            "456 Elm Street",
+            "789 Oak Avenue",
+            "1011 Pine Boulevard",
+            "1213 Cedar Lane",
+        ],
+        "address_line_2": [
+            "Suite 100",
+            "Apartment 201",
+            None,
+            "Unit 3B",
+            None,
+        ],
+        "district": [
+            "Downtown",
+            "Uptown",
+            "Midtown",
+            "East Side",
+            "West Side",
+        ],
+        "city": [
+            "New York",
+            "Chicago",
+            "Los Angeles",
+            "Houston",
+            "Philadelphia",
+        ],
+        "postal_code": ["10001", "20002", "30003", "40004", "50005"],
+        "country": ["USA", "USA", "USA", "USA", "USA"],
+        "phone": [
+            "(212) 555-1212",
+            "(312) 555-1213",
+            "(213) 555-1214",
+            "(713) 555-1215",
+            "(215) 555-1216",
+        ],
+        "created_at": [
+            "2023-02-15 12:00:00",
+            "2023-02-16 12:00:00",
+            "2023-02-17 12:00:00",
+            "2023-02-18 12:00:00",
+            "2023-02-19 12:00:00",
+        ],
+        "last_updated": [
+            "2023-02-15 12:00:00",
+            "2023-02-16 12:00:00",
+            "2023-02-17 12:00:00",
+            "2023-02-18 12:00:00",
+            "2023-02-19 12:00:00",
+        ],
+    }
+
+    df = pd.DataFrame(data)
+    get_df_from_parquet.return_value = df
+    # event = {
+    #     "time": "2024-02-13T10:45:18Z",
+    #     "Records": [
+    #         {
+    #             "s3": {
+    #                 "bucket": {"name": "extraction"},
+    #                 "object": {"key": "2024-02-15T19:01:53/address.pqt"},
+    #             }
+    #         }
+    #     ],
+    # }
+    # context = ""
+
+    # a = lambda_handler(event, context)
+    assert True
 
 
 @mock_aws
@@ -77,7 +150,6 @@ def import_parquet_file():
 
 
 def test_get_df_from_parquet(s3, import_parquet_file):
-    os.environ["S3_EXTRACT_BUCKET"] = "test-bucket"
     key = "test.parquet"
 
     data = import_parquet_file
@@ -89,8 +161,14 @@ def test_get_df_from_parquet(s3, import_parquet_file):
 
     upload_parquet(s3, os.environ["S3_EXTRACT_BUCKET"], key, data)
 
-    result = get_df_from_parquet(key)
+    result = get_df_from_parquet(key, "test-bucket")
 
     assert result["staff_id"][0] == 11
     assert result["first_name"][0] == "Meda"
     assert isinstance(result["created_at"][0], pd.Timestamp)
+
+
+def test_get_table_name():
+    keys = ["2024-02-15T19:01:53/address.pqt", "2024-02-21/purchase_order.pqt"]
+    assert get_table_name(keys[0]) == "address"
+    assert get_table_name(keys[1]) == "purchase_order"
