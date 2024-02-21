@@ -232,7 +232,7 @@ def test_integrate(s3, mockdb_creds):
         existing_table = df.to_records()
 
         for i, row in enumerate(existing_table):
-            if not table == "counterparty":
+            if table not in ["counterparty", "staff"]:
                 assert len(row) == len(expected_table[i]) + 1
 
 
@@ -302,23 +302,22 @@ def normalize_sql_query(query):
 def test_get_queries():
     expected_output = [
         normalize_sql_query(
-            '''SELECT t.staff_id, t.first_name, t.last_name,
-            t.email_address, t.last_updated, d.department_name, d.location
+            '''SELECT t.*,
+            d.department_name, d.location
             FROM staff as t
             LEFT JOIN department d ON t.department_id = d.department_id
             WHERE t.last_updated >= '2022-02-02';'''
         ),
         normalize_sql_query(
             '''
-            SELECT t.counterparty_id, t.counterparty_legal_name,
-            a.address_line_1 AS counterparty_legal_address_line_1,
-            a.address_line_2 AS counterparty_legal_address_line_2,
-            a.district AS counterparty_legal_district,
-            a.city AS counterparty_legal_city,
-            a.postal_code AS counterparty_legal_postal_code,
-            a.country AS counterparty_legal_country,
-            a.phone AS counterparty_legal_phone_number,
-            t.last_updated
+            SELECT t.*,
+            a.address_line_1,
+            a.address_line_2,
+            a.district,
+            a.city,
+            a.postal_code,
+            a.country,
+            a.phone
             FROM counterparty t
             LEFT JOIN address a on t.legal_address_id = a.address_id
             WHERE t.last_updated >= '2022-02-02';'''
