@@ -5,7 +5,8 @@ on:
       - "Terraform/*.tf"
       - "Terraform/*.tf.json"
     branches:
-      - "!main"
+      - '*'
+      - '!main'
   pull_request:
     branches:
       - main

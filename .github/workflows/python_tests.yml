@@ -6,7 +6,8 @@ on:
       - "test/**"
       - "requirements.txt"
     branches:
-      - "!main"
+      - '*'
+      - '!main'
   pull_request:
     branches:
       - main
