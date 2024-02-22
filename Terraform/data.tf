@@ -20,6 +20,24 @@ data "archive_file" "lambda" {
 
   depends_on = [null_resource.extraction]
 }
+data "archive_file" "transformation_lambda" {
+  /*
+    Creates an archive file containing the Lambda function code and dependencies.
+
+    Args:
+        type (str): The type of archive file to create (e.g., "zip").
+        source_file (str): The path to the main source file or directory to include in the archive.
+        output_path (str): The path where the archive file will be generated.
+
+    Returns:
+        None
+    */
+  type        = "zip"
+  source_file = "${path.module}/../src/transformation.py"
+  output_path = "${path.module}/../transformation_lambda.zip"
+
+  depends_on = [null_resource.extraction]
+}
 
 resource "null_resource" "extraction" {
   /*
@@ -33,6 +51,20 @@ resource "null_resource" "extraction" {
     */
   triggers = {
     main = sha256(file("${path.module}/../src/extractor.py"))
+  }
+}
+resource "null_resource" "transformation" {
+  /*
+    Creates a null resource that triggers the creation of an archive file containing the Lambda function code and dependencies.
+
+    Args:
+        triggers (dict): A dictionary specifying the trigger conditions for the null resource.
+
+    Returns:
+        None
+    */
+  triggers = {
+    main = sha256(file("${path.module}/../src/transformation.py"))
   }
 }
 
