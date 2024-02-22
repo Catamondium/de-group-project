@@ -66,7 +66,7 @@ resource "aws_s3_object" "transformation_lambda_code" {
   }
 }
 
-resource "aws_s3_bucket_versioning" "versioning_example" {
+resource "aws_s3_bucket_versioning" "ingestion_bucket" {
    /*
    Enables versioning for an Amazon S3 bucket.
 
@@ -82,7 +82,7 @@ resource "aws_s3_bucket_versioning" "versioning_example" {
     #disabled by default
   }
 }
-resource "aws_s3_bucket_versioning" "versioning_example" {
+resource "aws_s3_bucket_versioning" "processed_data_bucket" {
    /*
    Enables versioning for an Amazon S3 bucket.
 
@@ -101,7 +101,7 @@ resource "aws_s3_bucket_versioning" "versioning_example" {
 
 # this will not run if versioning is disabled
 # have to do another terraform apply to ensure retention
-resource "aws_s3_bucket_object_lock_configuration" "example" {
+resource "aws_s3_bucket_object_lock_configuration" "ingestion_bucket" {
     /*
     Configures object lock for an Amazon S3 bucket.
 
@@ -120,7 +120,7 @@ resource "aws_s3_bucket_object_lock_configuration" "example" {
     }
   }
 }
-resource "aws_s3_bucket_object_lock_configuration" "example" {
+resource "aws_s3_bucket_object_lock_configuration" "processed_data_bucket" {
     /*
     Configures object lock for an Amazon S3 bucket.
 
