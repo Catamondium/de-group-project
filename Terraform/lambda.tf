@@ -64,7 +64,7 @@ resource "aws_lambda_function" "transformation_lambda" {
         None
     */
   function_name    = "${var.transform_lambda_name}lambda"
-  role             = aws_iam_role.extraction_lambda_role.arn
+  role             = aws_iam_role.transformation_lambda_role.arn
   handler          = "transformation.lambda_handler"
   runtime          = "python3.11"
   s3_bucket        = data.aws_s3_bucket.utility_bucket.bucket

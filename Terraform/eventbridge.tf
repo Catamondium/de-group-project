@@ -36,7 +36,7 @@ resource "aws_cloudwatch_event_target" "every_five_minutes" {
   }
 }
 
-resource "aws_cloudwatch_log_group" "create_cloudwatch_log_group" {
+resource "aws_cloudwatch_log_group" "extraction_log_group" {
     /*
     Creates a CloudWatch Logs group for logging Lambda function invocations.
 
@@ -47,4 +47,16 @@ resource "aws_cloudwatch_log_group" "create_cloudwatch_log_group" {
         None
     */
   name = "/aws/lambda/${aws_lambda_function.extraction_lambda.function_name}"
+}
+resource "aws_cloudwatch_log_group" "transformation_log_group" {
+    /*
+    Creates a CloudWatch Logs group for logging Lambda function invocations.
+
+    Args:
+        name (str): The name of the CloudWatch Logs group.
+
+    Returns:
+        None
+    */
+  name = "/aws/lambda/${aws_lambda_function.transformation_lambda.function_name}"
 }
