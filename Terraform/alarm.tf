@@ -12,7 +12,7 @@ resource "aws_cloudwatch_log_metric_filter" "create_cloudwatch_log_group" {
     */
     name = "ReadError"
     pattern = "ERROR"
-    log_group_name = aws_cloudwatch_log_group.create_cloudwatch_log_group.name
+    log_group_name = aws_cloudwatch_log_group.extraction_log_group.name
     metric_transformation {
       name = "ErrorMetric"
       namespace = "ExtractionLambdaError"
