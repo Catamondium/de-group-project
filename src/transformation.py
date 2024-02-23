@@ -17,7 +17,9 @@ logger.setLevel("INFO")
 def lambda_handler(event, context):
     try:
         bucket_name = event["Records"][0]["s3"]["bucket"]["name"]
-        file_key = event["Records"][0]["s3"]["object"]["key"]
+        file_key = event["Records"][0]["s3"]["object"]["key"].replace(
+            "%3A", ":"
+        )
         table_name = get_table_name(file_key)
 
         if table_name in list(tables_transformation_templates.keys()):
@@ -26,10 +28,12 @@ def lambda_handler(event, context):
             # transform df due to template
             new_df = tables_transformation_templates[table_name](df)
             upload_parquet(
-                s3, os.environ.get("S3_TRANSFORMATION_BUCKET",
-                                   "test_transform_bucket"),
+                s3,
+                os.environ.get(
+                    "S3_TRANSFORMATION_BUCKET", "test_transform_bucket"
+                ),
                 file_key,
-                new_df
+                new_df,
             )
             return "Done something"
         # save df to parquet_file
@@ -111,6 +115,8 @@ def payment_transformation(df):
     df.drop("company_ac_number", axis=1, inplace=True)
     # counterparty_ac_number - DELETE
     df.drop("counterparty_ac_number", axis=1, inplace=True)
+    df.drop("created_at", axis=1, inplace=True)
+    df.drop("last_updated", axis=1, inplace=True)
     return df
 
 
@@ -138,6 +144,9 @@ def purchase_order_transformation(df):
     # agreed_delivery_date - OK
     # agreed_payment_date - OK
     # agreed_delivery_location_id - OK
+
+    df.drop("created_at", axis=1, inplace=True)
+    df.drop("last_updated", axis=1, inplace=True)
 
     # ✅️ result df should contain columns:
     # purchase_record_id
@@ -182,6 +191,8 @@ def sales_order_transformation(df):
         },
         inplace=True,
     )
+    df.drop("created_at", axis=1, inplace=True)
+    df.drop("last_updated", axis=1, inplace=True)
     # do nothing:
     # agreed_delivery_date
     # agreed_payment_date
@@ -277,7 +288,7 @@ def transform_currency(df):
 
     df["last_updated_date"] = df["last_updated"].dt.date
     df["last_updated_time"] = df["last_updated"].dt.time
-
+    df["currency_record_id"] = df["currency_id"]
     df.drop(columns=["last_updated", "created_at"], inplace=True)
 
     return df
