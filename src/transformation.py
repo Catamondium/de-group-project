@@ -70,6 +70,7 @@ def upload_parquet(client, bucket, key, data):
 def get_table_name(key):
     return key[:-4].split("/")[1]
 
+
 def split_time(df, col_name, new_date_col_name, new_time_col_name):
     df[col_name] = pd.to_datetime(df[col_name])
 
