@@ -4,6 +4,7 @@ from src.transformation import (
     get_df_from_parquet,
     get_table_name,
 )
+
 # from src.transformation import tables_transformation_templates
 
 from moto import mock_aws
@@ -11,6 +12,7 @@ import pandas as pd
 from unittest.mock import patch  # , Mock
 import boto3
 from datetime import datetime
+
 # from configparser import ConfigParser
 import pytest
 
@@ -94,14 +96,16 @@ def test_get_table_name():
     assert get_table_name(keys[1]) == "purchase_order"
 
 
-@patch('src.transformation.upload_parquet')
-@patch('src.transformation.get_df_from_parquet')
-def test_lambda_handler(mock_get_df_from_parquet,
-                        mock_upload_parquet):
+@patch("src.transformation.upload_parquet")
+@patch("src.transformation.get_df_from_parquet")
+def test_lambda_handler(mock_get_df_from_parquet, mock_upload_parquet):
     data = {
         "address_id": [1, 2, 3],
-        "address_line_1": ["123 Maple Street", "456 Oak Street",
-                           "789 Pine Street"],
+        "address_line_1": [
+            "123 Maple Street",
+            "456 Oak Street",
+            "789 Pine Street",
+        ],
         "address_line_2": ["Apt. 101", "Suite 202", "Room 303"],
         "district": ["North", "South", "East"],
         "city": ["Townsville", "Cityplace", "Villageland"],
@@ -109,28 +113,87 @@ def test_lambda_handler(mock_get_df_from_parquet,
         "country": ["CountryA", "CountryB", "CountryC"],
         "phone": ["123-456-7890", "098-765-4321", "456-789-0123"],
         "created_at": [datetime.now(), datetime.now(), datetime.now()],
-        "last_updated": [datetime.now(), datetime.now(), datetime.now()]
+        "last_updated": [datetime.now(), datetime.now(), datetime.now()],
     }
     df = pd.DataFrame(data)
     event = {
         "time": "2024-02-13T10:45:18Z",
-        "Records": [{
-            "s3": {
-                "bucket": {"name": "extraction"},
-                "object": {"key": "2024-02-15T19:01:53/address.pqt"},
+        "Records": [
+            {
+                "s3": {
+                    "bucket": {"name": "extraction"},
+                    "object": {"key": "2024-02-15T19:01:53/address.pqt"},
+                }
             }
-        }],
+        ],
     }
     context = {}
 
     # mocking
     mock_get_df_from_parquet.return_value = df
-    mock_upload_parquet.return_value = 0
 
     # ACT
-    res = lambda_handler(event, context)
-    assert res == "Done something"
+    lambda_handler(event, context)
 
-    (mock_get_df_from_parquet
-     .assert_called_once_with("2024-02-15T19:01:53/address.pqt", "extraction"))
+    (
+        mock_get_df_from_parquet.assert_called_once_with(
+            "2024-02-15T19:01:53/address.pqt", "extraction"
+        )
+    )
     mock_upload_parquet.assert_called_once()
+
+
+@mock_aws
+def test_client_error(s3, caplog):
+    event = {
+        "time": "2024-02-13T10:45:18Z",
+        "Records": [
+            {
+                "s3": {
+                    "bucket": {"name": "extraction"},
+                    "object": {"key": "2024-02-15T19:01:53/address.pqt"},
+                }
+            }
+        ],
+    }
+    context = {}
+    lambda_handler(event, context)
+    assert "Error accessing S3 name:" in caplog.text
+
+
+@patch("src.transformation.upload_parquet")
+@patch("src.transformation.get_df_from_parquet")
+def test_table_that_does_not_need_transforming(
+    mock_get_df_from_parquet, mock_upload_parquet
+):
+
+    event = {
+        "time": "2024-02-13T10:45:18Z",
+        "Records": [
+            {
+                "s3": {
+                    "bucket": {"name": "extraction"},
+                    "object": {"key": "2024-02-15T19:01:53/department.pqt"},
+                }
+            }
+        ],
+    }
+    context = {}
+
+    # ACT
+    lambda_handler(event, context)
+
+    assert not mock_get_df_from_parquet.called
+    assert not mock_upload_parquet.called
+
+
+def test_general_exception_error():
+    """
+    tests mocked db lambda handler
+    """
+
+    event = {"not_time": "not a time"}
+    context = ""
+
+    with pytest.raises(Exception):
+        lambda_handler(event, context)

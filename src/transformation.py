@@ -1,13 +1,11 @@
-import boto3
 import logging
 from urllib.request import urlopen
 from json import loads
-import pandas as pd
-
-# import pandas as pd
-# from io import BytesIO
-import awswrangler as wr
 import os
+import boto3
+import pandas as pd
+import awswrangler as wr
+import botocore
 
 s3 = boto3.client("s3")
 logger = logging.getLogger()
@@ -35,11 +33,19 @@ def lambda_handler(event, context):
                 file_key,
                 new_df,
             )
-            return "Done something"
-        # save df to parquet_file
-        return "Done nothing"
+
+    except botocore.exceptions.ClientError as e:
+        logger.error(
+            """Error accessing S3 name: %s, object key: %s
+                     Response error: %s, Message: %s""",
+            bucket_name,
+            file_key,
+            e.response["Error"]["Code"],
+            e.response["Error"]["Message"],
+        )
     except Exception as e:
         logger.error(e)
+        raise e
 
 
 def get_df_from_parquet(key, bucket_name):
