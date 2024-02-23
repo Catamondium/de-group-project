@@ -77,5 +77,13 @@ resource "aws_lambda_function" "transformation_lambda" {
   lifecycle {
     replace_triggered_by = [null_resource.extraction]
   }
+
+  environment {
+    variables = {
+      S3_EXTRACT_BUCKET = aws_s3_bucket.rannoch-s3-ingestion-bucket.bucket
+      S3_TRANSFORMATION_BUCKET = aws_s3_bucket.rannoch-s3-processed-data-bucket.bucket
+      S3_CONTROL_BUCKET = data.aws_s3_bucket.utility_bucket.bucket
+    }
+  }
 }
 
