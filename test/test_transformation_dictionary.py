@@ -1,5 +1,5 @@
 import pandas as pd
-from transformation_dictionary import (
+from transformation import (
     split_time,
     payment_transformation,
     purchase_order_transformation,
@@ -392,9 +392,9 @@ def test_transform_currency():
     date = ts.date()
 
     data = [
-        [1, "GBP", "British Pound", date, time],
-        [2, "USD", "US Dollar", date, time],
-        [3, "EUR", "Euro", date, time],
+        [1, "GBP", "British Pound", date, time, 1],
+        [2, "USD", "US Dollar", date, time, 2],
+        [3, "EUR", "Euro", date, time, 3],
     ]
     expected_df = pd.DataFrame(
         data,
@@ -404,6 +404,7 @@ def test_transform_currency():
             "currency_name",
             "last_updated_date",
             "last_updated_time",
+            "currency_record_id",
         ],
     )
 
@@ -487,7 +488,7 @@ def test_transform_payment_type_table():
 
 
 def test_transform_staff_table():
-    pqt_file = './test/parquet_test_file/staff.pqt'
+    pqt_file = "./test/parquet_test_file/staff.pqt"
 
     df = pd.read_parquet(pqt_file, engine="pyarrow")
 
@@ -505,7 +506,7 @@ def test_transform_staff_table():
             "Manchester",
             date,
             time,
-            1
+            1,
         ]
     ]
     expected_df = pd.DataFrame(
@@ -519,20 +520,21 @@ def test_transform_staff_table():
             "location",
             "last_updated_date",
             "last_updated_time",
-            "staff_record_id"
-        ]
+            "staff_record_id",
+        ],
     )
     transformed_df = transform_staff_table(df)
 
     expected_df = expected_df.astype(
-        {col: 'int32' for col in expected_df.select_dtypes('int64').columns})
+        {col: "int32" for col in expected_df.select_dtypes("int64").columns}
+    )
 
     for column, series in transformed_df.items():
         assert transformed_df[column][0] == expected_df[column][0]
 
 
 def test_transform_transaction_table():
-    pqt_file = './test/parquet_test_file/transaction.pqt'
+    pqt_file = "./test/parquet_test_file/transaction.pqt"
 
     df = pd.read_parquet(pqt_file, engine="pyarrow")
 
@@ -540,17 +542,7 @@ def test_transform_transaction_table():
     date = ts.date()
     time = ts.time()
 
-    data = [
-        [
-            1,
-            "PURCHASE",
-            None,
-            2,
-            date,
-            time,
-            1
-        ]
-    ]
+    data = [[1, "PURCHASE", None, 2, date, time, 1]]
     expected_df = pd.DataFrame(
         data,
         columns=[
@@ -560,11 +552,12 @@ def test_transform_transaction_table():
             "purchase_order_id",
             "last_updated_date",
             "last_updated_time",
-            "transaction_record_id"
-        ]
+            "transaction_record_id",
+        ],
     )
     transformed_df = transform_transaction_table(df)
     expected_df = expected_df.astype(
-        {col: 'int32' for col in expected_df.select_dtypes('int64').columns})
+        {col: "int32" for col in expected_df.select_dtypes("int64").columns}
+    )
 
     assert transformed_df.equals(expected_df)

@@ -1,9 +1,9 @@
 provider "aws" {
-    region = "eu-west-2"
+  region = "eu-west-2"
 }
 
 terraform {
-    /*
+  /*
       Configures Terraform to use an S3 backend for state management and specifies the required AWS provider.
 
     Args:
@@ -14,14 +14,14 @@ terraform {
     Returns:
         None 
     */
-    backend "s3" {
-        bucket = "rannoch-s3-utility-bucket"
-        key = "utility/tfstate"
-        region = "eu-west-2"
+  backend "s3" {
+    bucket = "rannoch-s3-utility-bucket"
+    key    = "utility/tfstate"
+    region = "eu-west-2"
+  }
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
     }
-    required_providers {
-        aws = {
-            source = "hashicorp/aws"
-        }
-    }
+  }
 }
