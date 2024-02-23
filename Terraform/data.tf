@@ -69,5 +69,5 @@ resource "null_resource" "transformation" {
 }
 
 data "aws_s3_bucket" "utility_bucket" {
-  bucket = "rannoch-s3-utility-bucket"
+  bucket = "${var.utility_bucket}"
 }

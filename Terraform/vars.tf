@@ -1,4 +1,9 @@
 # variables for everything
+variable "utility_bucket" {
+    type = string
+    default = "rannoch-s3-utility-bucket"
+}
+
 
 variable "bucket_name" {
     type = string

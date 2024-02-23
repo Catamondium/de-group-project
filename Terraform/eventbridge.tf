@@ -1,4 +1,4 @@
-resource "aws_cloudwatch_event_rule" "every_five_minutes" {
+resource "aws_cloudwatch_event_rule" "every_fifteen_minutes" {
     /*
     Creates a CloudWatch Events rule that triggers an event every five minutes.
 
@@ -10,12 +10,12 @@ resource "aws_cloudwatch_event_rule" "every_five_minutes" {
     Returns:
         None
     */
-  name                = "every-five-minutes"
-  description         = "Fires every five minutes"
+  name                = "every-fifteen-minutes"
+  description         = "Fires every fifteen minutes"
   # need to decide on the best frequency
-  schedule_expression = "rate(1 hour)" 
+  schedule_expression = "rate(15 minutes)" 
 }
-resource "aws_cloudwatch_event_target" "every_five_minutes" {
+resource "aws_cloudwatch_event_target" "every_fifteen_minutes" {
     /*
     Creates a target for a CloudWatch Events rule to trigger a Lambda function every five minutes.
 
@@ -27,7 +27,7 @@ resource "aws_cloudwatch_event_target" "every_five_minutes" {
     Returns:
         None
     */
-  rule      = aws_cloudwatch_event_rule.every_five_minutes.name
+  rule      = aws_cloudwatch_event_rule.every_fifteen_minutes.name
   target_id = "extraction_lambda"
   arn       = "${aws_lambda_function.extraction_lambda.arn}"
 

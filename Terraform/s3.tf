@@ -38,7 +38,7 @@ resource "aws_s3_object" "lambda_code" {
     Returns:
         None
     */
-  bucket = "rannoch-s3-utility-bucket"
+  bucket = "${var.utility_bucket}"
   key = "lambda-code/extraction_lambda.zip"
   source = "${path.module}/../extraction_lambda.zip"
 
@@ -57,7 +57,7 @@ resource "aws_s3_object" "transformation_lambda_code" {
     Returns:
         None
     */
-  bucket = "rannoch-s3-utility-bucket"
+  bucket = "${var.utility_bucket}"
   key = "lambda-code/transformation_lambda.zip"
   source = "${path.module}/../transformation_lambda.zip"
 

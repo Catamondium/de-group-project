@@ -121,7 +121,7 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.extraction_lambda.function_name
   principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.every_five_minutes.arn
+  source_arn    = aws_cloudwatch_event_rule.every_fifteen_minutes.arn
 }
 resource "aws_iam_policy" "s3_policy" {
   /*
@@ -232,4 +232,12 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
     lambda_function_arn = aws_lambda_function.transformation_lambda.arn
     events              = ["s3:ObjectCreated:*"]
   }
+}
+
+resource "aws_lambda_permission" "allow_s3" {
+  action         = "lambda:InvokeFunction"
+  function_name  = aws_lambda_function.transformation_lambda.function_name
+  principal      = "s3.amazonaws.com"
+  source_arn     = aws_s3_bucket.rannoch-s3-ingestion-bucket.arn
+  source_account = data.aws_caller_identity.current.account_id
 }
