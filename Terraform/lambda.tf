@@ -24,7 +24,7 @@ resource "aws_lambda_function" "extraction_lambda" {
   s3_bucket        = data.aws_s3_bucket.utility_bucket.bucket
   s3_key           = "lambda-code/extraction_lambda.zip"
   layers           = ["arn:aws:lambda:eu-west-2:336392948345:layer:AWSSDKPandas-Python311:5"]
-  source_code_hash = data.archive_file.lambda.output_base64sha256
+  source_code_hash = data.archive_file.extraction_lambda.output_base64sha256
   memory_size      = 256
   timeout          = 60
 

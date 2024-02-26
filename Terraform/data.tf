@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 data "aws_region" "current" {}
 
-data "archive_file" "lambda" {
+data "archive_file" "extraction_lambda" {
   /*
     Creates an archive file containing the Lambda function code and dependencies.
 
