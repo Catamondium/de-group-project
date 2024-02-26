@@ -2,6 +2,7 @@ from src.loader import (
     lambda_handler,
     get_df_from_parquet,
     get_table_name,
+    create_query
 )
 # from src.transformation import tables_transformation_templates
 
@@ -73,6 +74,8 @@ def test_get_table_name():
     assert get_table_name(keys[1]) == "purchase_order"
 
 
+
+
 @patch('src.transformation.upload_parquet')
 @patch('src.transformation.get_df_from_parquet')
 def test_lambda_handler(mock_get_df_from_parquet,
@@ -110,3 +113,27 @@ def test_lambda_handler(mock_get_df_from_parquet,
     # ACT
     res = lambda_handler(event, context)
     assert res is None
+
+def normalize_sql_query(query):
+    return "\n".join(line.strip() for line in query.split("\n")).strip()
+
+
+def test_create_query():
+    # ASSIGN
+    data = {'id': [1], 'name': ['Yarik'], 'value': [100]}
+    df = pd.DataFrame(data)
+    expected_query = """
+        INSERT INTO test_table (id, name, value)
+        VALUES (:id, :name, :value)
+        ON CONFLICT (id)
+        DO UPDATE SET name = EXCLUDED.name, value = EXCLUDED.value;
+        """
+
+    # ACT
+    query = normalize_sql_query(create_query("test_table",
+                                             "id",
+                                             df))
+
+    # ASSERT
+
+    assert query == normalize_sql_query(expected_query)
