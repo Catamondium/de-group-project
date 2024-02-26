@@ -60,3 +60,15 @@ resource "aws_cloudwatch_log_group" "transformation_log_group" {
     */
   name = "/aws/lambda/${aws_lambda_function.transformation_lambda.function_name}"
 }
+resource "aws_cloudwatch_log_group" "loader_log_group" {
+    /*
+    Creates a CloudWatch Logs group for logging Lambda function invocations.
+
+    Args:
+        name (str): The name of the CloudWatch Logs group.
+
+    Returns:
+        None
+    */
+  name = "/aws/lambda/${aws_lambda_function.loader_lambda.function_name}"
+}
