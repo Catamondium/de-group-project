@@ -36,7 +36,7 @@ data "archive_file" "transformation_lambda" {
   source_file = "${path.module}/../src/transformation.py"
   output_path = "${path.module}/../transformation_lambda.zip"
 
-  depends_on = [null_resource.extraction]
+  depends_on = [null_resource.transformation]
 }
 data "archive_file" "loader_lambda" {
   /*
@@ -54,7 +54,7 @@ data "archive_file" "loader_lambda" {
   source_file = "${path.module}/../src/loader.py"
   output_path = "${path.module}/../loader_lambda.zip"
 
-  depends_on = [null_resource.extraction]
+  depends_on = [null_resource.loader]
 }
 
 resource "null_resource" "extraction" {
