@@ -16,7 +16,7 @@ terraform {
     */
   backend "s3" {
     #bucket = "rannoch-s3-utility-bucket"
-    bucket = "rannoch-transform-test-s3-utility-bucket"
+    bucket = "rannoch-s3-utility-bucket"
     key    = "utility/tfstate"
     region = "eu-west-2"
   }

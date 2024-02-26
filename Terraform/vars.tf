@@ -2,39 +2,31 @@
 variable "utility_bucket" {
   type = string
   #default = "rannoch-s3-utility-bucket"
-  default = "rannoch-transform-test-s3-utility-bucket"
+  default = "rannoch-s3-utility-bucket"
 }
-
-#change this to keep bucket names separate
-#also need to change remote tfvars name too
-variable "environment" {
-  type    = string
-  default = "testing-"
-}
-
 
 variable "bucket_name" {
   type    = string
-  default = "rannoch-testing-"
+  default = "rannoch"
 }
 
 variable "ingestion_lambda_name" {
   type    = string
-  default = "ingestion-testing-"
+  default = "ingestion"
 }
 
 variable "transform_lambda_name" {
   type    = string
-  default = "transform-testing-"
+  default = "transform"
 }
 
 variable "extraction_lambda_name" {
   type    = string
-  default = "extraction-testing-"
+  default = "extraction"
 }
 variable "loader_lambda_name" {
   type    = string
-  default = "loader-testing-"
+  default = "loader"
 }
 
 variable "username" {
