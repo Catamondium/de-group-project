@@ -38,6 +38,7 @@ resource "aws_s3_object" "extraction_lambda_code" {
     Returns:
         None
     */
+    
   bucket      = var.utility_bucket
   key         = "lambda-code/extraction_lambda.zip"
   source      = "${path.module}/../extraction_lambda.zip"
