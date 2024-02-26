@@ -360,8 +360,9 @@ def test_get_queries():
     )
 
 
+@inhibit_CI
 @patch("extractor.get_last_updated_time")
-def test_database_error(mock_get_time, caplog):
+def test_database_error(mock_get_time, caplog, mockdb_creds):
     mock_get_time.return_value = "not a time"
 
     event = {"time": "2024-02-13T10:45:18Z"}
@@ -371,9 +372,10 @@ def test_database_error(mock_get_time, caplog):
     assert "pg8000 error:" in caplog.text
 
 
+@inhibit_CI
 @patch("extractor.upload_parquet")
-def test_client_error(mock_upload_parquet, caplog):
-    error = {"Error": {"Code": "404", "Message": "Bucket not founc"}}
+def test_client_error(mock_upload_parquet, caplog, mockdb_creds):
+    error = {"Error": {"Code": "404", "Message": "Bucket not found"}}
 
     mock_upload_parquet.side_effect = ClientError(
         error, "SomeServiceException"
