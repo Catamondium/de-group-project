@@ -167,7 +167,7 @@ resource "aws_iam_policy" "s3_policy" {
   policy      = data.aws_iam_policy_document.put_s3_document.json
 }
 
-resource "aws_iam_policy" "ingestion_cloudwatch_policy" {
+resource "aws_iam_policy" "extraction_cloudwatch_policy" {
   /*
     Creates an IAM policy using the specified IAM policy document.
 
@@ -178,7 +178,7 @@ resource "aws_iam_policy" "ingestion_cloudwatch_policy" {
     Returns:
         None
     */
-  name_prefix = "cw-policy-${var.ingestion_lambda_name}"
+  name_prefix = "cw-policy-${var.extraction_lambda_name}"
   policy      = data.aws_iam_policy_document.cw_document.json
 }
 resource "aws_iam_policy" "transformation_cloudwatch_policy" {
@@ -253,7 +253,7 @@ resource "aws_iam_role_policy_attachment" "loader_s3_policy_attachment" {
   policy_arn = aws_iam_policy.s3_policy.arn
 }
 
-resource "aws_iam_role_policy_attachment" "ingestion_cw_policy_attachment" {
+resource "aws_iam_role_policy_attachment" "extraction_cw_policy_attachment" {
   /*
     Attaches an IAM policy to an IAM role.
 
@@ -265,7 +265,7 @@ resource "aws_iam_role_policy_attachment" "ingestion_cw_policy_attachment" {
         None
     */
   role       = aws_iam_role.extraction_lambda_role.name
-  policy_arn = aws_iam_policy.ingestion_cloudwatch_policy.arn
+  policy_arn = aws_iam_policy.extraction_cloudwatch_policy.arn
 }
 resource "aws_iam_role_policy_attachment" "transformation_cw_policy_attachment" {
   /*

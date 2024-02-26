@@ -17,7 +17,7 @@ resource "aws_lambda_function" "extraction_lambda" {
     Returns:
         None
     */
-  function_name    = "${var.ingestion_lambda_name}lambda"
+  function_name    = "${var.extraction_lambda_name}lambda"
   role             = aws_iam_role.extraction_lambda_role.arn
   handler          = "extractor.lambda_handler"
   runtime          = "python3.11"
