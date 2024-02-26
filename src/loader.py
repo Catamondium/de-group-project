@@ -78,19 +78,14 @@ def df_insertion(query, df):
     host = environ.get("PGHOST2", "testing")
     port = environ.get("PGPORT2", "5432")
     database = environ.get("PGDATABASE2")
-    conn_params = {
-        "user": "your_username",
-        "database": "your_database",
-        "password": "your_password",
-        "host": "localhost",
-    }
+
     with pg.Connection(username,
                        password=password,
                        host=host,
                        port=port,
                        database=database) as con:
-        with con.prepare(query) as ps:
-            for _, row in df.iterrows():
-                ps.run(row.to_dict())
-            con.commit()
+        ps = con.prepare(query)
+        for _, row in df.iterrows():
+            ps.run(**row.to_dict())
+        #
     return "Loaded"
