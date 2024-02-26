@@ -26,7 +26,7 @@ resource "aws_lambda_function" "extraction_lambda" {
   layers           = ["arn:aws:lambda:eu-west-2:336392948345:layer:AWSSDKPandas-Python311:5"]
   source_code_hash = data.archive_file.extraction_lambda.output_base64sha256
   memory_size      = 256
-  timeout          = 60
+  timeout          = 240
 
   lifecycle {
     replace_triggered_by = [null_resource.extraction]

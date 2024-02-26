@@ -176,7 +176,7 @@ def lambda_handler(event, context):
                 extract(s3, connection, bucket, table, time, since)
 
         if environ.get('CI', 'false') == 'false':
-            sleep(30)
+            sleep(120)
 
         for table in tables:
             if table.casefold() in FACT_TABLES:
