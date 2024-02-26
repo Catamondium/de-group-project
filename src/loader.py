@@ -23,7 +23,7 @@ table_relations = {
         "staff": ('dim_staff', 'staff_record_id'),
         "counterparty": ('dim_counterparty', 'counterparty_record_id'),
         "purchase_order": ('fact_purchase_order', 'purchase_record_id'),
-        "payment_type": ('fact_payment', 'payment_record_id'),
+        "payment_type": ('dim_payment_type', 'payment_type_record_id'),
         "sales_order": ('fact_sales_order', 'sales_record_id')
 }
 

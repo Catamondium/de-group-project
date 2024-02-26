@@ -172,12 +172,12 @@ def test_lambda_handler(
 
     client.return_value = "s3"
     conn.return_value = connMock
-    connMock.run.return_value = [["example_table"]]
+    connMock.run.return_value = [["address"]]
 
     lambda_handler(event, context)
 
     MockExtract.assert_called_with(
-        "s3", connMock, "ingestion", "example_table", time, None
+        "s3", connMock, "ingestion", "address", time, None
     )
 
 

@@ -1,6 +1,7 @@
 import pandas as pd
 import logging
 from os import environ
+from time import sleep
 from datetime import datetime
 import pg8000.native as pg
 from boto3 import client
@@ -11,17 +12,20 @@ logger.setLevel("INFO")
 
 # anticipated table structure
 
-TABLES = [
+DIM_TABLES = [
     "currency",
-    "payment",
     "department",
     "transaction",
     "design",
     "address",
     "staff",
     "counterparty",
+    "payment_type"
+]
+
+FACT_TABLES = [
+    "payment",
     "purchase_order",
-    "payment_type",
     "sales_order",
 ]
 
@@ -34,8 +38,8 @@ def get_query(table: str, since: datetime) -> str:
     The function returns a SELECT query that fetches records from
     the specified table which have been updated on or after the last
     successful update time. It accounts for various relationships
-    between the 'table' and other related tables to fetch the updated
-    records. If the table name doesn't match any predefined tables,
+    between the 'table' and other related DIM_TABLES to fetch the updated
+    records. If the table name doesn't match any predefined DIM_TABLES,
     it returns a default query.
 
     Parameters:
@@ -118,7 +122,7 @@ def extract(client, conn: pg.Connection, bucket, table, time, since):
 def lambda_handler(event, context):
     """
     Handles the Lambda event and extracts data
-    from PostgreSQL tables to upload to an S3
+    from PostgreSQL DIM_TABLES to upload to an S3
     bucket in Parquet format.
 
     Args:
@@ -168,7 +172,15 @@ def lambda_handler(event, context):
 
         tables = [item[0] for item in rows]
         for table in tables:
-            extract(s3, connection, bucket, table, time, since)
+            if table.casefold() in DIM_TABLES:
+                extract(s3, connection, bucket, table, time, since)
+
+        if environ.get('CI', 'false') == 'false':
+            sleep(30)
+
+        for table in tables:
+            if table.casefold() in FACT_TABLES:
+                extract(s3, connection, bucket, table, time, since)
 
         set_last_updated_time(s3, datetime.now())
     except pg.DatabaseError as db_error:
