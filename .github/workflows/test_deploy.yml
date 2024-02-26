@@ -108,3 +108,7 @@ jobs:
       - name: Terrafrom Apply
         working-directory: Terraform
         run: terraform apply -auto-approve -var-file git.tfvars
+
+      - name: Terrafrom Apply
+        working-directory: Terraform
+        run: terraform apply -auto-approve -var-file git.tfvars
