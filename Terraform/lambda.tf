@@ -12,7 +12,7 @@ resource "aws_lambda_function" "extraction_lambda" {
         layers (list): List of ARNs of Lambda layers to attach to the Lambda function.
         source_code_hash (str): Base64-encoded representation of the SHA256 hash of the deployment package.
         memory_size (int): The amount of memory, in MB, that is allocated for the Lambda function.
-        timeout (int): The function execution time (in seconds) after which Lambda terminates the function.
+        timeout (int): The function execution time (in seconds) after which Lambda terminates the function
 
     Returns:
         None
