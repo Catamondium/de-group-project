@@ -67,6 +67,20 @@ resource "null_resource" "transformation" {
     main = sha256(file("${path.module}/../src/transformation.py"))
   }
 }
+resource "null_resource" "loader" {
+  /*
+    Creates a null resource that triggers the creation of an archive file containing the Lambda function code and dependencies.
+
+    Args:
+        triggers (dict): A dictionary specifying the trigger conditions for the null resource.
+
+    Returns:
+        None
+    */
+  triggers = {
+    main = sha256(file("${path.module}/../src/loader.py"))
+  }
+}
 
 data "aws_s3_bucket" "utility_bucket" {
   bucket = "${var.utility_bucket}"

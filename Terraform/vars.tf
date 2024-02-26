@@ -24,6 +24,10 @@ variable "extraction_lambda_name" {
     type = string
     default = "extraction-"
 }
+variable "loader_lambda_name" {
+    type = string
+    default = "loader-"
+}
 
 variable "username" {
     description = "username"
@@ -46,6 +50,33 @@ variable "port" {
     sensitive = true
 }
 variable "database" {
+    description = "database"
+    type = string
+    sensitive = true
+}
+
+# data warehouse
+variable "username_OLAP" {
+    description = "username"
+    type = string
+    sensitive = true
+}
+variable "password_OLAP" {
+    description = "password"
+    type = string
+    sensitive = true
+}
+variable "host_OLAP" {
+    description = "host"
+    type = string
+    sensitive = true
+}
+variable "port_OLAP" {
+    description = "port"
+    type = number
+    sensitive = true
+}
+variable "database_OLAP" {
     description = "database"
     type = string
     sensitive = true
