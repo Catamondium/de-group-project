@@ -32,7 +32,9 @@ def lambda_handler(event, context):
     try:
         # get bucket
         bucket_name = event["Records"][0]["s3"]["bucket"]["name"]
-        file_key = event["Records"][0]["s3"]["object"]["key"]
+        file_key = event["Records"][0]["s3"]["object"]["key"].replace(
+            "%3A", ":"
+        )
         table_name = get_table_name(file_key)
         # get dataframe
         df = get_df_from_parquet(file_key, bucket_name)
