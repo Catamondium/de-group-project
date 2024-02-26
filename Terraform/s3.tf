@@ -62,7 +62,26 @@ resource "aws_s3_object" "transformation_lambda_code" {
   source = "${path.module}/../transformation_lambda.zip"
 
   lifecycle {
-    replace_triggered_by = [null_resource.extraction]
+    replace_triggered_by = [null_resource.transformation]
+  }
+}
+resource "aws_s3_object" "loader_lambda_code" {
+    /*
+    Creates an Amazon S3 bucket for data ingestion.
+
+    Args:
+        bucket (str): The name of the S3 bucket.
+        force_destroy (bool): A boolean flag indicating whether all objects should be deleted from the bucket before deleting the bucket.
+
+    Returns:
+        None
+    */
+  bucket = "${var.utility_bucket}"
+  key = "lambda-code/loader_lambda.zip"
+  source = "${path.module}/../loader_lambda.zip"
+
+  lifecycle {
+    replace_triggered_by = [null_resource.loader]
   }
 }
 
