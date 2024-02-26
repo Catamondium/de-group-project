@@ -56,27 +56,27 @@ variable "database" {
 }
 
 # data warehouse
-variable "username_OLAP" {
+variable "OLAP_username" {
     description = "username"
     type = string
     sensitive = true
 }
-variable "password_OLAP" {
+variable "OLAP_password" {
     description = "password"
     type = string
     sensitive = true
 }
-variable "host_OLAP" {
+variable "OLAP_host" {
     description = "host"
     type = string
     sensitive = true
 }
-variable "port_OLAP" {
+variable "OLAP_port" {
     description = "port"
     type = number
     sensitive = true
 }
-variable "database_OLAP" {
+variable "OLAP_database" {
     description = "database"
     type = string
     sensitive = true

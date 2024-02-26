@@ -122,11 +122,11 @@ resource "aws_lambda_function" "loader_lambda" {
 
   environment {
     variables = {
-      PGUSER2 = "${var.username_OLAP}"
-      PGPASSWORD2 = "${var.password_OLAP}"
-      PGHOST2 = "${var.host_OLAP}"
-      PGPORT2 = "${var.port_OLAP}"
-      PGDATABASE2 = "${var.database_OLAP}"
+      PGUSER2 = "${var.OLAP_username}"
+      PGPASSWORD2 = "${var.OLAP_password}"
+      PGHOST2 = "${var.OLAP_host}"
+      PGPORT2 = "${var.OLAP_port}"
+      PGDATABASE2 = "${var.OLAP_database}"
     }
   }
 }
