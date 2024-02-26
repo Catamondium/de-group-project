@@ -79,7 +79,7 @@ resource "null_resource" "transformation" {
         triggers (dict): A dictionary specifying the trigger conditions for the null resource.
 
     Returns:
-        None
+        None.
     */
   triggers = {
     main = sha256(file("${path.module}/../src/transformation.py"))
