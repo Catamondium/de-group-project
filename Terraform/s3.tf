@@ -27,7 +27,7 @@ resource "aws_s3_bucket" "rannoch-s3-processed-data-bucket"{
     force_destroy = true
 }
 
-resource "aws_s3_object" "lambda_code" {
+resource "aws_s3_object" "extraction_lambda_code" {
     /*
     Creates an Amazon S3 bucket for data ingestion.
 
