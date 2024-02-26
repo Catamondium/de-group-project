@@ -48,12 +48,12 @@ def get_query(table: str, since: datetime) -> str:
     - str: A SQL query string.
     """
     queries = {
-        "staff": '''SELECT t.*,
+        "staff": """SELECT t.*,
             d.department_name, d.location
             FROM staff as t
             LEFT JOIN department d ON t.department_id = d.department_id
-            ''',
-        "counterparty": '''
+            """,
+        "counterparty": """
             SELECT t.*,
             a.address_line_1,
             a.address_line_2,
@@ -64,17 +64,17 @@ def get_query(table: str, since: datetime) -> str:
             a.phone
             FROM counterparty t
             LEFT JOIN address a on t.legal_address_id = a.address_id
-            ''',
+            """,
         # default
-        "default": f'''
+        "default": f"""
                 SELECT * FROM {pg.identifier(table)} as t
-                '''
+                """,
     }
     if since is not None:
         ending_suffix = f"WHERE t.last_updated >= {pg.literal(since)};"
     else:
-        ending_suffix = ';'
-    if table in ['staff', 'counterparty']:
+        ending_suffix = ";"
+    if table in ["staff", "counterparty"]:
         return f"{queries[table]}{ending_suffix}"
     else:
         return f"{queries['default']}{ending_suffix}"
@@ -140,8 +140,11 @@ def lambda_handler(event, context):
         port = environ.get("PGPORT", "5432")
         database = environ.get("PGDATABASE")
         connection = pg.Connection(
-            username, password=password, host=host,
-            port=port, database=database
+            username,
+            password=password,
+            host=host,
+            port=port,
+            database=database,
         )
 
         s3 = client("s3")
@@ -168,7 +171,16 @@ def lambda_handler(event, context):
             extract(s3, connection, bucket, table, time, since)
 
         set_last_updated_time(s3, datetime.now())
-
+    except pg.DatabaseError as db_error:
+        logger.info("pg8000 error: %s", db_error)
+    except ClientError as e:
+        logger.error(
+            """Error accessing S3 bucket: %s,
+                     Response error: %s, Message: %s""",
+            bucket,
+            e.response["Error"]["Code"],
+            e.response["Error"]["Message"],
+        )
     except Exception as e:
         logger.error(e)
         raise e
@@ -227,13 +239,14 @@ def get_last_updated_time(s3) -> datetime | None:
 
     try:
         content = s3.get_object(
-            Bucket=bucket, Key="last_successful_extraction.txt")
+            Bucket=bucket, Key="last_successful_extraction.txt"
+        )
         last_updated_time = content["Body"].read().decode("utf-8").strip()
         logger.info("LAST UPDATED present")
 
         return datetime.fromtimestamp(float(last_updated_time))
     except ClientError as e:
-        if e.response['Error']['Code'] == 'NoSuchKey':
+        if e.response["Error"]["Code"] == "NoSuchKey":
             logger.warning(f"No such key error: {e}")
             return None
         else:
@@ -246,5 +259,5 @@ def set_last_updated_time(s3, current_time: datetime):
     s3.put_object(
         Bucket=bucket,
         Key="last_successful_extraction.txt",
-        Body=str(current_time.timestamp())
+        Body=str(current_time.timestamp()),
     )
