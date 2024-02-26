@@ -81,3 +81,8 @@ variable "OLAP_database" {
     type = string
     sensitive = true
 }
+variable "OLAP_schema" {
+    description = "schema"
+    type = string
+    sensitive = true
+}

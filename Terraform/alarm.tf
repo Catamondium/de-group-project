@@ -88,7 +88,7 @@ resource "aws_cloudwatch_metric_alarm" "extraction_alert_errors" {
         None
     */
 
-  alarm_name          = "ErrorAlert"
+  alarm_name          = "ExtractionErrorAlert"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   metric_name         = "ErrorMetric"
   namespace           = "ExtractionLambdaError"
@@ -96,7 +96,7 @@ resource "aws_cloudwatch_metric_alarm" "extraction_alert_errors" {
   period              = 60
   statistic           = "Sum"
   threshold           = 1
-  alarm_description   = "This triggers when ConnectionErrorAlert is triggered in a minute."
+  alarm_description   = "This triggers when ExtractionErrorAlert is triggered in a minute."
   alarm_actions = ["arn:aws:sns:eu-west-2:730335327822:ConnectionErrorTest"]
   actions_enabled = "true"
 } 
@@ -121,7 +121,7 @@ resource "aws_cloudwatch_metric_alarm" "transformation_alert_errors" {
         None
     */
 
-  alarm_name          = "ErrorAlert"
+  alarm_name          = "TransformErrorAlert"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   metric_name         = "ErrorMetric"
   namespace           = "TransformationLambdaError"
@@ -129,7 +129,7 @@ resource "aws_cloudwatch_metric_alarm" "transformation_alert_errors" {
   period              = 60
   statistic           = "Sum"
   threshold           = 1
-  alarm_description   = "This triggers when ConnectionErrorAlert is triggered in a minute."
+  alarm_description   = "This triggers when TransformErrorAlert is triggered in a minute."
   alarm_actions = ["arn:aws:sns:eu-west-2:730335327822:ConnectionErrorTest"]
   actions_enabled = "true"
 } 
@@ -154,7 +154,7 @@ resource "aws_cloudwatch_metric_alarm" "loader_alert_errors" {
         None
     */
 
-  alarm_name          = "ErrorAlert"
+  alarm_name          = "LoaderErrorAlert"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   metric_name         = "ErrorMetric"
   namespace           = "TransformationLambdaError"
@@ -162,7 +162,7 @@ resource "aws_cloudwatch_metric_alarm" "loader_alert_errors" {
   period              = 60
   statistic           = "Sum"
   threshold           = 1
-  alarm_description   = "This triggers when ConnectionErrorAlert is triggered in a minute."
+  alarm_description   = "This triggers when LoaderErrorAlert is triggered in a minute."
   alarm_actions = ["arn:aws:sns:eu-west-2:730335327822:ConnectionErrorTest"]
   actions_enabled = "true"
 } 

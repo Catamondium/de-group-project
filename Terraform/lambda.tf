@@ -128,6 +128,8 @@ resource "aws_lambda_function" "loader_lambda" {
       PGHOST2 = "${var.OLAP_host}"
       PGPORT2 = "${var.OLAP_port}"
       PGDATABASE2 = "${var.OLAP_database}"
+      PGDATABASE2 = "${var.OLAP_database}"
+      SCHEMA = "${var.OLAP_schema}"
     }
   }
 }

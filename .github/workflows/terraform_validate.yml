@@ -41,6 +41,7 @@ jobs:
           OLAP_host::"${{ secrets.OLAP_HOST}}" \
           OLAP_port::"${{ secrets.PGPORT}}" \
           OLAP_database::"${{ secrets.OLAP_DATABASE}}" \
+          OLAP_schema::"${{ secrets.PGUSER}}" \
       - name: Terraform Init
         working-directory: Terraform
         run: terraform init
