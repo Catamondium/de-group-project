@@ -75,7 +75,7 @@ resource "aws_lambda_function" "transformation_lambda" {
   timeout          = 60
 
   lifecycle {
-    replace_triggered_by = [null_resource.extraction]
+    replace_triggered_by = [null_resource.transformation]
   }
 
   environment {

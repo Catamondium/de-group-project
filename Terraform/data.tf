@@ -17,7 +17,6 @@ data "archive_file" "lambda" {
   type        = "zip"
   source_file = "${path.module}/../src/extractor.py"
   output_path = "${path.module}/../extraction_lambda.zip"
-
   depends_on = [null_resource.extraction]
 }
 data "archive_file" "transformation_lambda" {
@@ -51,9 +50,9 @@ data "archive_file" "loader_lambda" {
         None
     */
   type        = "zip"
+
   source_file = "${path.module}/../src/loader.py"
   output_path = "${path.module}/../loader_lambda.zip"
-
   depends_on = [null_resource.loader]
 }
 
