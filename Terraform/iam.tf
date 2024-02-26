@@ -206,7 +206,7 @@ resource "aws_iam_policy" "loader_cloudwatch_policy" {
     Returns:
         None
     */
-  name_prefix = "cw-policy-${var.transform_lambda_name}"
+  name_prefix = "cw-policy-${var.loader_lambda_name}"
   policy      = data.aws_iam_policy_document.cw_document.json
 }
 
@@ -292,8 +292,8 @@ resource "aws_iam_role_policy_attachment" "loader_cw_policy_attachment" {
     Returns:
         None
     */
-  role       = aws_iam_role.transformation_lambda_role.name
-  policy_arn = aws_iam_policy.transformation_cloudwatch_policy.arn
+  role       = aws_iam_role.loader_lambda_role.name
+  policy_arn = aws_iam_policy.loader_cloudwatch_policy.arn
 }
 
 resource "aws_s3_bucket_notification" "bucket_notification" {
