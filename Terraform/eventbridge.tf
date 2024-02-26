@@ -31,9 +31,6 @@ resource "aws_cloudwatch_event_target" "every_fifteen_minutes" {
   target_id = "extraction_lambda"
   arn       = "${aws_lambda_function.extraction_lambda.arn}"
 
-  lifecycle {
-    replace_triggered_by = [ null_resource.extraction ]
-  }
 }
 
 resource "aws_cloudwatch_log_group" "extraction_log_group" {
