@@ -73,7 +73,7 @@ variable "OLAP_host" {
 }
 variable "OLAP_port" {
     description = "port"
-    type = number
+    type = string
     sensitive = true
 }
 variable "OLAP_database" {
