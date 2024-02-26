@@ -17,12 +17,11 @@ import pytest
 
 # from io import BytesIO
 import os
+from t_utils import inhibit_CI
 
 
 # from sample_datasets import sample_dataset
-# from t_utils import inhibit_CI
 
-# flake8: noqa
 # TODO reenable me after work TODO BUG TEMP
 # TODO this was gutted from transform
 
@@ -70,8 +69,6 @@ def test_get_df_from_parquet(s3, import_parquet_file):
     # TODO, i didn't know this was coupled with EXTRACT
     with pytest.raises(Exception):
         key = "test.parquet"
-
-        data = import_parquet_file
 
         s3.create_bucket(
             Bucket=os.environ["S3_EXTRACT_BUCKET"],
@@ -154,7 +151,7 @@ def test_create_query():
 
     assert query == normalize_sql_query(expected_query)
 
-# create test table in local db
+
 def setup_test_table(mockdb_creds):
     """Create test table in local db."""
     username = os.environ.get("PGUSER2", "testing")
@@ -202,9 +199,10 @@ def delete_test_table(mockdb_creds):
     con.close()
 
 
+@inhibit_CI
 def test_df_insertion(mockdb_creds):
     setup_test_table(mockdb_creds)
-
+    table_name = "dim_design"
     # test DataFrame
     data = {
         'design_record_id': [1, 2],
@@ -247,7 +245,7 @@ def test_df_insertion(mockdb_creds):
     """
 
     # ACT 1
-    df_insertion(query, tdf)
+    df_insertion(query, tdf, table_name)
 
     username = os.environ.get("PGUSER2", "testing")
     password = os.environ.get("PGPASSWORD2", "testing")
@@ -255,11 +253,10 @@ def test_df_insertion(mockdb_creds):
     port = os.environ.get("PGPORT2", "5432")
     database = os.environ.get("PGDATABASE2")
     conn = pg.Connection(username,
-                        password=password,
-                        host=host,
-                        port=port,
-                        database=database)
-
+                         password=password,
+                         host=host,
+                         port=port,
+                         database=database)
 
     result = conn.run("SELECT * FROM dim_design ORDER BY design_record_id")
     assert len(result) == 2
@@ -278,9 +275,9 @@ def test_df_insertion(mockdb_creds):
         'last_updated_time': ['11:11:11', '13:03:03']
     }
     tdf = pd.DataFrame(data)
-    df_insertion(query, tdf)
+    df_insertion(query, tdf, table_name)
 
-    assert True
+    result = conn.run("SELECT * FROM dim_design")
+    assert len(result) == 3
 
     delete_test_table(mockdb_creds)
-

@@ -41,7 +41,7 @@ def lambda_handler(event, context):
         # create query template for specific table fill with placeholders
         sql_query_template = create_query(table_name, primary_key, df)
         # insert
-        df_insertion(sql_query_template, df)
+        df_insertion(sql_query_template, df, table_name)
         return 'Ok'
     except Exception as e:
         logger.error(e)
@@ -72,7 +72,7 @@ def get_table_name(key):
     return key[:-4].split("/")[1]
 
 
-def df_insertion(query, df):
+def df_insertion(query, df, table_name):
     username = environ.get("PGUSER2", "testing")
     password = environ.get("PGPASSWORD2", "testing")
     host = environ.get("PGHOST2", "testing")
@@ -88,4 +88,4 @@ def df_insertion(query, df):
         for _, row in df.iterrows():
             ps.run(**row.to_dict())
         #
-    return "Loaded"
+    return f"{table_name} Loaded ✅️🤘️"
