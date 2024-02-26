@@ -7,26 +7,26 @@ variable "utility_bucket" {
 
 variable "bucket_name" {
   type    = string
-  default = "rannoch"
+  default = "rannoch-"
 }
 
 variable "ingestion_lambda_name" {
   type    = string
-  default = "ingestion"
+  default = "ingestion-"
 }
 
 variable "transform_lambda_name" {
   type    = string
-  default = "transform"
+  default = "transform-"
 }
 
 variable "extraction_lambda_name" {
   type    = string
-  default = "extraction"
+  default = "extraction-"
 }
 variable "loader_lambda_name" {
   type    = string
-  default = "loader"
+  default = "loader-"
 }
 
 variable "username" {
