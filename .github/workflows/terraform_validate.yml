@@ -39,7 +39,7 @@ jobs:
           OLAP_username::"${{ secrets.PGUSER}}" \
           OLAP_password::"${{ secrets.OLAP_PASSWORD}}" \
           OLAP_host::"${{ secrets.OLAP_HOST}}" \
-          OLAP_port::"${{ secrets.OLAP_PORT}}" \
+          OLAP_port::"${{ secrets.PGPORT}}" \
           OLAP_database::"${{ secrets.OLAP_DATABASE}}" \
       - name: Terraform Init
         working-directory: Terraform
