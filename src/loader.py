@@ -30,15 +30,18 @@ table_relations = {
 
 def lambda_handler(event, context):
     """
-    Handles Lambda events triggered by S3 object creations, processes Parquet files,
+    Handles Lambda events triggered by S3 object creations,
+    processes Parquet files,
     and inserts data into a database table.
 
     Parameters:
-    - event (dict): The Lambda event object containing information about the event.
+    - event (dict): The Lambda event object containing
+    information about the event.
     - context (LambdaContext): The Lambda execution context.
 
     Returns:
-    - str: A status message indicating the success or failure of the operation.
+    - str: A status message indicating the success or
+    failure of the operation.
 
     Example:
     ```
@@ -46,10 +49,14 @@ def lambda_handler(event, context):
     ```
 
     Notes:
-    - This function assumes that the event is triggered by an S3 object creation event.
-    - It processes Parquet files from the specified S3 bucket and inserts the data into
-      the appropriate database table based on predefined table relations.
-    - If successful, it returns 'Ok'. If an error occurs, it logs the error and does not
+    - This function assumes that the event is triggered
+    by an S3 object creation event.
+    - It processes Parquet files from the specified S3 bucket
+    and inserts the data into
+      the appropriate database table based on predefined
+      table relations.
+    - If successful, it returns 'Ok'. If an error occurs,
+    it logs the error and does not
       raise an exception.
     """
     try:
@@ -74,25 +81,32 @@ def lambda_handler(event, context):
 
 def create_query(table_name, primary_key, df):
     """
-    Creates an SQL query template for inserting data into a specified table.
+    Creates an SQL query template for inserting data
+    into a specified table.
 
     Parameters:
     - table_name (str): The name of the database table.
     - primary_key (str): The name of the primary key column.
-    - df (DataFrame): The pandas DataFrame containing the data to be inserted.
+    - df (DataFrame): The pandas DataFrame containing
+    the data to be inserted.
 
     Returns:
-    - str: An SQL query template for inserting data into the specified table.
+    - str: An SQL query template for inserting data
+    into the specified table.
 
     Example:
     ```
-    sql_query_template = create_query("my_table", "id", my_dataframe)
+    sql_query_template = create_query("my_table",
+    "id", my_dataframe)
     ```
 
     Notes:
-    - This function generates an SQL query template for inserting data into a PostgreSQL
-      database table using the DataFrame's column names as placeholders for values.
-    - It assumes that the primary key column is specified and that conflicts are resolved
+    - This function generates an SQL query template
+    for inserting data into a PostgreSQL
+      database table using the DataFrame's column
+      names as placeholders for values.
+    - It assumes that the primary key column is
+    specified and that conflicts are resolved
       by updating existing rows.
     """
     columns = list(df.columns)
@@ -113,11 +127,13 @@ def get_df_from_parquet(key, bucket_name):
     Reads a Parquet file from an S3 bucket into a DataFrame.
 
     Parameters:
-    - key (str): The key (path) of the Parquet file in the S3 bucket.
+    - key (str): The key (path) of the Parquet file
+    in the S3 bucket.
     - bucket_name (str): The name of the S3 bucket.
 
     Returns:
-    - DataFrame: A pandas DataFrame containing the data from the Parquet file.
+    - DataFrame: A pandas DataFrame containing the
+    data from the Parquet file.
 
     Example:
     ```
@@ -125,9 +141,12 @@ def get_df_from_parquet(key, bucket_name):
     ```
 
     Notes:
-    - This function reads a Parquet file located in the specified S3 bucket.
-    - It uses the AWS Data Wrangler library (wr) to read the Parquet file into a DataFrame.
-    - Ensure that appropriate permissions are set for accessing the S3 bucket.
+    - This function reads a Parquet file located
+    in the specified S3 bucket.
+    - It uses the AWS Data Wrangler library (wr)
+    to read the Parquet file into a DataFrame.
+    - Ensure that appropriate permissions are set
+    for accessing the S3 bucket.
     """
     pqt_object = [f"s3://{bucket_name}/{key}"]
     df = wr.s3.read_parquet(path=pqt_object)
@@ -150,9 +169,12 @@ def get_table_name(key):
     ```
 
     Notes:
-    - This function assumes that the file key follows a specific format where the table name
-      is located after the first slash and before the file extension.
-    - It extracts the table name by removing the file extension and then splitting the key
+    - This function assumes that the file key follows
+    a specific format where the table name
+      is located after the first slash and before the
+      file extension.
+    - It extracts the table name by removing the file
+    extension and then splitting the key
       by slashes and returning the second element.
     """
     return key[:-4].split("/")[1]
@@ -160,27 +182,35 @@ def get_table_name(key):
 
 def df_insertion(query, df, table_name):
     """
-    Inserts data from a DataFrame into a PostgreSQL database table using the provided query.
+    Inserts data from a DataFrame into a PostgreSQL database
+    table using the provided query.
 
     Parameters:
-    - query (str): The SQL query template for inserting data into the database table.
-    - df (DataFrame): The pandas DataFrame containing the data to be inserted.
+    - query (str): The SQL query template for inserting
+    data into the database table.
+    - df (DataFrame): The pandas DataFrame containing the
+    data to be inserted.
     - table_name (str): The name of the database table.
 
     Returns:
-    - str: A status message indicating the success of the data insertion process.
+    - str: A status message indicating the success of the data
+    insertion process.
 
     Example:
     ```
-    status_message = df_insertion("INSERT INTO my_table (...) VALUES (...) ON CONFLICT ...", my_dataframe, "my_table")
+    status_message = df_insertion("INSERT INTO my_table (...)
+    VALUES (...) ON CONFLICT ...", my_dataframe, "my_table")
     ```
 
     Notes:
-    - This function assumes that the DataFrame columns match the columns in the database table
+    - This function assumes that the DataFrame columns
+    match the columns in the database table
       specified in the query.
-    - It uses environment variables to retrieve connection parameters for accessing the PostgreSQL
+    - It uses environment variables to retrieve connection
+    parameters for accessing the PostgreSQL
       database.
-    - The data insertion process is performed row by row using the prepared statement.
+    - The data insertion process is performed row by row
+    using the prepared statement.
     """
     username = environ.get("PGUSER2", "testing")
     password = environ.get("PGPASSWORD2", "testing")

@@ -247,6 +247,34 @@ def rows_to_dict(items, columns):
 
 
 def get_last_updated_time(s3) -> datetime | None:
+    """
+    Retrieves the last updated time from an S3 object.
+
+    Parameters:
+    - s3: An S3 client object.
+
+    Returns:
+    - datetime | None: The last updated time as a
+    datetime object if available,
+      or None if the object does not exist or cannot be accessed.
+
+    Example:
+    ```
+    last_updated_time = get_last_updated_time(s3_client)
+    ```
+
+    Notes:
+    - This function assumes that the last updated
+    time is stored in an S3 object
+      named "last_successful_extraction.txt" within
+      the control bucket.
+    - If the object exists, it reads its content
+    and converts the timestamp to
+      a datetime object.
+    - If the object does not exist or cannot be accessed,
+    it logs a warning and
+      returns None.
+    """
     bucket = environ.get("S3_CONTROL_BUCKET", "control_bucket")
 
     try:
