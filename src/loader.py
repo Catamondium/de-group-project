@@ -66,18 +66,12 @@ def create_query(table_name, primary_key, df):
     DO UPDATE SET {assignments};
     """
     if table_name == "dim_transaction":
-        print("got to here")
-        df = df.replace({np.nan: -1})
-        df = df.astype(
-            {col: "int64" for col in df.select_dtypes("float64").columns}
-        )
         sql_query_template = sql_query_template.replace(
             ":sales_order_id", "nullif(:sales_order_id, -1)"
         )
         sql_query_template = sql_query_template.replace(
             ":purchase_order_id", "nullif(:purchase_order_id, -1)"
         )
-        print("dim_transaction sql", sql_query_template)
     return sql_query_template
 
 
@@ -98,7 +92,12 @@ def df_insertion(query, df, table_name):
         host = environ.get("PGHOST2", "testing")
         port = environ.get("PGPORT2", "5432")
         database = environ.get("PGDATABASE2")
-
+        if table_name == "dim_transaction":
+            print("got to here")
+            df = df.replace({np.nan: -1})
+            df = df.astype(
+                {col: "int64" for col in df.select_dtypes("float64").columns}
+            )
         with pg.Connection(
             username,
             password=password,
@@ -108,6 +107,7 @@ def df_insertion(query, df, table_name):
         ) as con:
             ps = con.prepare(query)
             for _, row in df.iterrows():
+                logger.info(str(row.to_dict()))
                 ps.run(**row.to_dict())
             #
         return f"{table_name} Loaded ✅️🤘️"
