@@ -3,8 +3,9 @@ from src.loader import (
     get_df_from_parquet,
     get_table_name,
     create_query,
-    df_insertion
+    df_insertion,
 )
+
 # from src.transformation import tables_transformation_templates
 import pg8000.native as pg
 from moto import mock_aws
@@ -88,15 +89,17 @@ def test_get_table_name():
     assert get_table_name(keys[1]) == "purchase_order"
 
 
-@patch('src.transformation.upload_parquet')
-@patch('src.transformation.get_df_from_parquet')
-def test_lambda_handler(mock_get_df_from_parquet,
-                        mock_upload_parquet):
+@patch("src.transformation.upload_parquet")
+@patch("src.transformation.get_df_from_parquet")
+def test_lambda_handler(mock_get_df_from_parquet, mock_upload_parquet):
     # TODO
     data = {
         "address_id": [1, 2, 3],
-        "address_line_1": ["123 Maple Street", "456 Oak Street",
-                           "789 Pine Street"],
+        "address_line_1": [
+            "123 Maple Street",
+            "456 Oak Street",
+            "789 Pine Street",
+        ],
         "address_line_2": ["Apt. 101", "Suite 202", "Room 303"],
         "district": ["North", "South", "East"],
         "city": ["Townsville", "Cityplace", "Villageland"],
@@ -104,17 +107,19 @@ def test_lambda_handler(mock_get_df_from_parquet,
         "country": ["CountryA", "CountryB", "CountryC"],
         "phone": ["123-456-7890", "098-765-4321", "456-789-0123"],
         "created_at": [datetime.now(), datetime.now(), datetime.now()],
-        "last_updated": [datetime.now(), datetime.now(), datetime.now()]
+        "last_updated": [datetime.now(), datetime.now(), datetime.now()],
     }
     df = pd.DataFrame(data)
     event = {
         "time": "2024-02-13T10:45:18Z",
-        "Records": [{
-            "s3": {
-                "bucket": {"name": "extraction"},
-                "object": {"key": "2024-02-15T19:01:53/address.pqt"},
+        "Records": [
+            {
+                "s3": {
+                    "bucket": {"name": "extraction"},
+                    "object": {"key": "2024-02-15T19:01:53/address.pqt"},
+                }
             }
-        }],
+        ],
     }
     context = {}
 
@@ -133,7 +138,7 @@ def normalize_sql_query(query):
 
 def test_create_query():
     # ASSIGN
-    data = {'id': [1], 'name': ['Yarik'], 'value': [100]}
+    data = {"id": [1], "name": ["Yarik"], "value": [100]}
     df = pd.DataFrame(data)
     expected_query = """
         INSERT INTO test_table (id, name, value)
@@ -143,9 +148,26 @@ def test_create_query():
         """
 
     # ACT
-    query = normalize_sql_query(create_query("test_table",
-                                             "id",
-                                             df))
+    query = normalize_sql_query(create_query("test_table", "id", df))
+
+    # ASSERT
+
+    assert query == normalize_sql_query(expected_query)
+
+
+def test_create_query_dim_transaction():
+    # ASSIGN
+    data = {"id": [1], "sales_order_id": [None], "purchase_order_id": [100]}
+    df = pd.DataFrame(data)
+    expected_query = """
+        INSERT INTO dim_transaction (id, sales_order_id, purchase_order_id)
+        VALUES (:id, nullif(:sales_order_id, -1), nullif(:purchase_order_id, -1))
+        ON CONFLICT (id)
+        DO UPDATE SET sales_order_id = EXCLUDED.sales_order_id, purchase_order_id = EXCLUDED.purchase_order_id;
+        """  # noqa: E501
+
+    # ACT
+    query = normalize_sql_query(create_query("dim_transaction", "id", df))
 
     # ASSERT
 
@@ -161,14 +183,17 @@ def setup_test_table(mockdb_creds):
     database = os.environ.get("PGDATABASE2")
 
     print(username, password, host, port, database, "🧨️-🧨-️🧨-️🧨️-🧨️")
-    con = pg.Connection(username,
-                        password=password,
-                        host=host,
-                        port=port,
-                        database=database)
+    con = pg.Connection(
+        username,
+        password=password,
+        host=host,
+        port=port,
+        database=database,
+    )
 
     con.run("DROP TABLE IF EXISTS dim_design;")
-    con.run("""
+    con.run(
+        """
         CREATE TABLE dim_design (
             design_record_id INT PRIMARY KEY,
             design_id INT,
@@ -178,7 +203,8 @@ def setup_test_table(mockdb_creds):
             last_updated_date DATE,
             last_updated_time TIME
         );
-    """)
+    """
+    )
     con.close()
 
 
@@ -189,11 +215,9 @@ def delete_test_table(mockdb_creds):
     host = os.environ.get("PGHOST2", "testing")
     port = os.environ.get("PGPORT2", "5432")
     database = os.environ.get("PGDATABASE2")
-    con = pg.Connection(username,
-                        password=password,
-                        host=host,
-                        port=port,
-                        database=database)
+    con = pg.Connection(
+        username, password=password, host=host, port=port, database=database
+    )
 
     con.run("DROP TABLE IF EXISTS dim_design;")
     con.close()
@@ -205,13 +229,13 @@ def test_df_insertion(mockdb_creds):
     table_name = "dim_design"
     # test DataFrame
     data = {
-        'design_record_id': [1, 2],
-        'design_id': [1, 2],
-        'design_name': ['Design One', 'Design Two'],
-        'file_location': ['/path/to/design1', '/path/to/design2'],
-        'file_name': ['design1.png', 'design2.png'],
-        'last_updated_date': ['2021-01-01', '2021-01-02'],
-        'last_updated_time': ['12:00:00', '13:00:00']
+        "design_record_id": [1, 2],
+        "design_id": [1, 2],
+        "design_name": ["Design One", "Design Two"],
+        "file_location": ["/path/to/design1", "/path/to/design2"],
+        "file_name": ["design1.png", "design2.png"],
+        "last_updated_date": ["2021-01-01", "2021-01-02"],
+        "last_updated_time": ["12:00:00", "13:00:00"],
     }
     tdf = pd.DataFrame(data)
 
@@ -252,27 +276,25 @@ def test_df_insertion(mockdb_creds):
     host = os.environ.get("PGHOST2", "testing")
     port = os.environ.get("PGPORT2", "5432")
     database = os.environ.get("PGDATABASE2")
-    conn = pg.Connection(username,
-                         password=password,
-                         host=host,
-                         port=port,
-                         database=database)
+    conn = pg.Connection(
+        username, password=password, host=host, port=port, database=database
+    )
 
     result = conn.run("SELECT * FROM dim_design ORDER BY design_record_id")
     assert len(result) == 2
     for i, row in enumerate(result):
-        assert row[0] == data['design_record_id'][i]
-        assert row[1] == data['design_id'][i]
+        assert row[0] == data["design_record_id"][i]
+        assert row[1] == data["design_id"][i]
 
     # new test DataFrame
     data = {
-        'design_record_id': [1, 3],
-        'design_id': [99, 3],
-        'design_name': ['Design 99', 'Design 3'],
-        'file_location': ['/path/to/design99', '/path/to/design3'],
-        'file_name': ['design99.png', 'design3.png'],
-        'last_updated_date': ['2021-11-11', '2021-03-03'],
-        'last_updated_time': ['11:11:11', '13:03:03']
+        "design_record_id": [1, 3],
+        "design_id": [99, 3],
+        "design_name": ["Design 99", "Design 3"],
+        "file_location": ["/path/to/design99", "/path/to/design3"],
+        "file_name": ["design99.png", "design3.png"],
+        "last_updated_date": ["2021-11-11", "2021-03-03"],
+        "last_updated_time": ["11:11:11", "13:03:03"],
     }
     tdf = pd.DataFrame(data)
     df_insertion(query, tdf, table_name)
