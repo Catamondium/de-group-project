@@ -13,6 +13,40 @@ logger.setLevel("INFO")
 
 
 def lambda_handler(event, context):
+    """
+    Handles Lambda events triggered by S3 object
+    creations, applies transformation templates
+    to Parquet files, and uploads transformed files
+    to another S3 bucket.
+
+    Parameters:
+    - event (dict): The Lambda event object containing
+    information about the event.
+    - context (LambdaContext): The Lambda execution context.
+
+    Returns:
+    - None
+
+    Example:
+    ```
+    lambda_handler(event, context)
+    ```
+
+    Notes:
+    - This function assumes that the event is
+    triggered by an S3 object creation event.
+    - It retrieves the bucket name and file key
+    from the event, replaces characters in the
+      file key if necessary, and determines the
+      table name from the file key.
+    - If the table name corresponds to a transformation
+    template, it reads the Parquet file,
+      applies the transformation, and uploads the
+      transformed file to another S3 bucket.
+    - It logs errors encountered during the process,
+    including any ClientError exceptions
+      from accessing S3, and raises other exceptions.
+    """
     try:
         bucket_name = event["Records"][0]["s3"]["bucket"]["name"]
         file_key = event["Records"][0]["s3"]["object"]["key"].replace(
@@ -49,6 +83,30 @@ def lambda_handler(event, context):
 
 
 def get_df_from_parquet(key, bucket_name):
+    """
+    Reads a Parquet file from an S3 bucket into a DataFrame.
+
+    Parameters:
+    - key (str): The key (path) of the Parquet file in the S3 bucket.
+    - bucket_name (str): The name of the S3 bucket.
+
+    Returns:
+    - DataFrame: A pandas DataFrame containing the
+    data from the Parquet file.
+
+    Example:
+    ```
+    df = get_df_from_parquet("my_file.parquet", "my_bucket")
+    ```
+
+    Notes:
+    - This function reads a Parquet file located in the
+    specified S3 bucket.
+    - It uses the AWS Data Wrangler library (wr) to
+    read the Parquet file into a DataFrame.
+    - Ensure that appropriate permissions are set for accessing
+    the S3 bucket.
+    """
     pqt_object = [f"s3://{bucket_name}/{key}"]
     df = wr.s3.read_parquet(path=pqt_object)
     return df
@@ -78,10 +136,65 @@ def upload_parquet(client, bucket, key, data):
 
 
 def get_table_name(key):
+    """
+    Extracts the table name from a file key.
+
+    Parameters:
+    - key (str): The key (path) of the file.
+
+    Returns:
+    - str: The extracted table name.
+
+    Example:
+    ```
+    table_name = get_table_name("folder/my_file.parquet")
+    ```
+
+    Notes:
+    - This function assumes that the file key follows
+    a specific format where the table name
+      is located after the first slash and before the
+      file extension.
+    - It extracts the table name by removing the file
+    extension and then splitting the key
+      by slashes and returning the second element.
+    """
     return key[:-4].split("/")[1]
 
 
 def split_time(df, col_name, new_date_col_name, new_time_col_name):
+    """
+    Splits a datetime column into separate date and
+    time columns in a DataFrame.
+
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing
+    the datetime column to be split.
+    - col_name (str): The name of the datetime column
+    to be split.
+    - new_date_col_name (str): The name for the new
+    date column to be created.
+    - new_time_col_name (str): The name for the new
+    time column to be created.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with the datetime
+    column split into separate date and time columns.
+
+    Example:
+    ```
+    df = split_time(my_dataframe, "datetime_column",
+    "date_column", "time_column")
+    ```
+
+    Notes:
+    - This function assumes that the datetime column
+    specified by `col_name` contains
+      datetime values that can be parsed by `pd.to_datetime`.
+    - It creates new columns for the date and time
+    components extracted from the original
+      datetime column.
+    """
     df[col_name] = pd.to_datetime(df[col_name])
 
     # split
@@ -92,34 +205,51 @@ def split_time(df, col_name, new_date_col_name, new_time_col_name):
 
 
 def payment_transformation(df):
-    # DUPLICATE payment_id
+    """
+    Applies transformations to a DataFrame containing payment data.
+
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing payment data.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with the specified transformations applied.
+
+    Example:
+    ```
+    transformed_df = payment_transformation(payment_dataframe)
+    ```
+
+    Notes:
+    - This function assumes that the input DataFrame
+    contains columns like 'payment_id',
+      'created_at', 'last_updated', 'transaction_id',
+      'counterparty_id', 'currency_id',
+      and 'payment_type_id'.
+    - It renames certain columns to match a specific
+    naming convention for record IDs.
+    - It splits datetime columns 'created_at' and
+    'last_updated' into separate date and
+      time columns using the 'split_time' function.
+    - It drops specific columns that are no longer
+    needed for analysis or have been
+      replaced by renamed columns.
+    """
     df["payment_record_id"] = df["payment_id"]
-    # created_at - SPLIT
     df = split_time(df, "created_at", "created_date", "created_time")
-    # last_updated - SPLIT
     df = split_time(
         df, "last_updated", "last_updated_date", "last_updated_time"
     )
-    # transaction_id - RENAME TO transaction_record_id
     df.rename(
         columns={"transaction_id": "transaction_record_id"}, inplace=True
     )
-    # counterparty_id - RENAME TO counterparty_record_id
     df.rename(
         columns={"counterparty_id": "counterparty_record_id"}, inplace=True
     )
-    # payment_amount - OK
-    # currency_id - RENAME TO currency_record_id
     df.rename(columns={"currency_id": "currency_record_id"}, inplace=True)
-    # payment_type_id - RENAME TO payment_type_record_id
     df.rename(
         columns={"payment_type_id": "payment_type_record_id"}, inplace=True
     )
-    # paid - OK
-    # payment_date - OK
-    # company_ac_number - DELETE
     df.drop("company_ac_number", axis=1, inplace=True)
-    # counterparty_ac_number - DELETE
     df.drop("counterparty_ac_number", axis=1, inplace=True)
     df.drop("created_at", axis=1, inplace=True)
     df.drop("last_updated", axis=1, inplace=True)
@@ -127,67 +257,75 @@ def payment_transformation(df):
 
 
 def purchase_order_transformation(df):
-    # purchase_order_id RENAME  purchase_record_id
-    # AND DUPLICATE
+    """
+    Applies transformation rules specific to payment data to a DataFrame.
+
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing the payment data.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with applied transformations.
+
+    Example:
+    ```
+    transformed_df = payment_transformation(payment_dataframe)
+    ```
+
+    Notes:
+    - This function assumes that the input DataFrame contains
+    payment-related columns
+      such as 'payment_id', 'created_at', 'last_updated',
+      etc.
+    - It creates new columns, renames existing columns,
+    splits datetime columns into date
+      and time components, and drops unnecessary columns
+      specific to payment data.
+    """
     df["purchase_record_id"] = df["purchase_order_id"]
-    # created_at SPLIT TO created_date, created_time
     df = split_time(df, "created_at", "created_date", "created_time")
-    # last_updated SPLIT TO last_updated_date, last_updated_time
     df = split_time(
         df, "last_updated", "last_updated_date", "last_updated_time"
     )
-    # staff_id RENAME TO staff_record_id
     df.rename(columns={"staff_id": "staff_record_id"}, inplace=True)
-    # counterparty_id RENAME TO counterparty_record_id
     df.rename(
         columns={"counterparty_id": "counterparty_record_id"}, inplace=True
     )
-    # item_code - OK
-    # item_quantity - OK
-    # item_unit_price - OK
-    # currency_id -RENAME TO currency_record_id
     df.rename(columns={"currency_id": "currency_record_id"}, inplace=True)
-    # agreed_delivery_date - OK
-    # agreed_payment_date - OK
-    # agreed_delivery_location_id - OK
-
     df.drop("created_at", axis=1, inplace=True)
     df.drop("last_updated", axis=1, inplace=True)
-
-    # ✅️ result df should contain columns:
-    # purchase_record_id
-    # purchase_order_id
-    # created_date
-    # created_time
-    # last_updated_date
-    # last_updated_time
-    # staff_record_id
-    # counterparty_record_id
-    # item_code
-    # item_quantity
-    # item_unit_price
-    # currency_record_id
-    # agreed_delivery_date
-    # agreed_payment_date
-    # agreed_delivery_location_id
-
     return df
 
 
 def sales_order_transformation(df):
-    # OLD
-    # sales_order_id DUPL sales_record_id, sales_order_id
+    """
+    Applies transformation rules specific to sales order data to a DataFrame.
+
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing the sales order data.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with applied transformations.
+
+    Example:
+    ```
+    transformed_df = sales_order_transformation(sales_order_dataframe)
+    ```
+
+    Notes:
+    - This function assumes that the input DataFrame
+    contains sales order-related
+      columns such as 'sales_order_id', 'created_at',
+      'last_updated', etc.
+    - It creates new columns, renames existing columns,
+    splits datetime columns into date
+      and time components, and drops unnecessary columns
+      specific to sales order data.
+    """
     df["sales_record_id"] = df["sales_order_id"]
-    # created_at SPLIT TO created_date, created_time
     df = split_time(df, "created_at", "created_date", "created_time")
-    # last_updated SPLIT TO last_updated_date, last_updated_time
     df = split_time(
         df, "last_updated", "last_updated_date", "last_updated_time"
     )
-    # design_id RENAME design_record_id
-    # staff_id RENAME sales_staff_id
-    # counterparty_id RENAME counterparty_record_id
-    # currency_id RENAME currency_record_id
     df.rename(
         columns={
             "design_id": "design_record_id",
@@ -199,38 +337,34 @@ def sales_order_transformation(df):
     )
     df.drop("created_at", axis=1, inplace=True)
     df.drop("last_updated", axis=1, inplace=True)
-    # do nothing:
-    # agreed_delivery_date
-    # agreed_payment_date
-    # agreed_delivery_location_id
-    # units_sold
-    # unit_price
-
-    # result dataframe should contain columns:
-    # sales_record_id
-    # sales_order_id
-    # created_date
-    # created_time
-    # last_updated_date
-    # last_updated_time
-    # design_record_id
-    # sales_staff_id
-    # counterparty_record_id
-    # currency_record_id
-    # units_sold
-    # unit_price
-    # agreed_payment_date
-    # agreed_delivery_date
-    # agreed_delivery_location_id
-
     return df
 
 
 def transform_address_table(df):
+    """
+    Applies transformation rules specific to an address table to a DataFrame.
+
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing the address data.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with applied transformations.
+
+    Example:
+    ```
+    transformed_df = transform_address_table(address_dataframe)
+    ```
+
+    Notes:
+    - This function assumes that the input DataFrame contains address-related
+      columns such as 'address_id', 'last_updated', 'created_at', etc.
+    - It creates new columns, such as 'last_updated_date', 'last_updated_time',
+      and 'location_record_id'.
+    - It drops columns 'last_updated' and 'created_at'.
+    """
     df["last_updated_date"] = df["last_updated"].dt.date
     df["last_updated_time"] = df["last_updated"].dt.time
     df["location_record_id"] = df["address_id"]
-
     df.drop(
         columns=[
             "last_updated",
@@ -238,17 +372,44 @@ def transform_address_table(df):
         ],
         inplace=True,
     )
-
     return df
 
 
 def transform_counterparty_table(df):
+    """
+    Applies transformation rules specific to a counterparty table
+    to a DataFrame.
 
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing the
+    counterparty data.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with applied transformations.
+
+    Example:
+    ```
+    transformed_df = transform_counterparty_table(counterparty_dataframe)
+    ```
+
+    Notes:
+    - This function assumes that the input DataFrame
+    contains counterparty-related
+      columns such as 'counterparty_id', 'last_updated',
+      'created_at', etc.
+    - It creates new columns, such as 'last_updated_date',
+    'last_updated_time',
+      and 'counterparty_record_id'.
+    - It renames existing columns according to the provided
+    rename_dict.
+    - It drops columns specified in the drop list, including
+    'last_updated',
+      'created_at', 'legal_address_id', 'commercial_contact',
+      and 'delivery_contact'.
+    """
     df["last_updated_date"] = df["last_updated"].dt.date
     df["last_updated_time"] = df["last_updated"].dt.time
-
     df["counterparty_record_id"] = df["counterparty_id"]
-
     rename_dict = {
         "address_line_1": "counterparty_legal_address_line_1",
         "address_line_2": "counterparty_legal_address_line_2",
@@ -259,7 +420,6 @@ def transform_counterparty_table(df):
         "phone": "counterparty_legal_phone_number",
     }
     df.rename(columns=rename_dict, inplace=True)
-
     df.drop(
         columns=[
             "last_updated",
@@ -274,12 +434,38 @@ def transform_counterparty_table(df):
 
 
 def transform_currency(df):
+    """
+    Applies transformation rules specific to a currency table to a DataFrame.
+
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing the currency data.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with applied transformations.
+
+    Example:
+    ```
+    transformed_df = transform_currency(currency_dataframe)
+    ```
+
+    Notes:
+    - This function assumes that the input DataFrame contains currency-related
+      columns such as 'currency_id', 'currency_code',
+      'last_updated', 'created_at', etc.
+    - It retrieves currency data from a remote JSON file
+    and creates a DataFrame from it.
+    - It merges the currency DataFrame with the input DataFrame
+    based on the 'currency_code'
+      column, assuming a many-to-one relationship.
+    - It creates new columns, such as 'last_updated_date', 'last_updated_time',
+      and 'currency_record_id'.
+    - It drops columns 'last_updated' and 'created_at'
+    from the input DataFrame.
+    """
     url = "https://raw.githubusercontent.com/umpirsky/currency-list/master/data/en_GB/currency.json"  # noqa
     response = urlopen(url)
-
     json_raw = response.read().decode("utf-8")
     currencies = loads(json_raw)
-
     curr_ls = [
         {
             "currency_code": k,
@@ -289,27 +475,69 @@ def transform_currency(df):
     ]
 
     currency_df = pd.DataFrame(data=curr_ls)
-
     df = df.merge(currency_df, how="left", on="currency_code", validate="m:1")
-
     df["last_updated_date"] = df["last_updated"].dt.date
     df["last_updated_time"] = df["last_updated"].dt.time
     df["currency_record_id"] = df["currency_id"]
     df.drop(columns=["last_updated", "created_at"], inplace=True)
-
     return df
 
 
 def transform_design_table(df):
+    """
+    Applies transformation rules specific to a design table to a DataFrame.
+
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing the design data.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with applied transformations.
+
+    Example:
+    ```
+    transformed_df = transform_design_table(design_dataframe)
+    ```
+
+    Notes:
+    - This function assumes that the input DataFrame contains design-related
+      columns such as 'design_id', 'last_updated', 'created_at', etc.
+    - It creates new columns, such as 'last_updated_date', 'last_updated_time',
+      and 'design_record_id'.
+    - It drops columns 'last_updated' and 'created_at'
+    from the input DataFrame.
+    """
     df["last_updated_date"] = df["last_updated"].dt.date
     df["last_updated_time"] = df["last_updated"].dt.time
     df["design_record_id"] = df["design_id"]
     df.drop(columns=["last_updated", "created_at"], inplace=True)
-
     return df
 
 
 def transform_payment_type_table(df):
+    """
+    Applies transformation rules specific to a payment
+    type table to a DataFrame.
+
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing the payment type data.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with applied transformations.
+
+    Example:
+    ```
+    transformed_df = transform_payment_type_table(payment_type_dataframe)
+    ```
+
+    Notes:
+    - This function assumes that the input DataFrame
+    contains payment type-related
+      columns such as 'payment_type_id', 'last_updated', 'created_at', etc.
+    - It creates new columns, such as 'last_updated_date', 'last_updated_time',
+      'payment_type_record_id', and 'payment_record_id'.
+    - It drops columns 'last_updated', 'created_at', and 'payment_type_id'
+      from the input DataFrame.
+    """
     df["last_updated_date"] = df["last_updated"].dt.date
     df["last_updated_time"] = df["last_updated"].dt.time
     df["payment_type_record_id"] = df["payment_type_id"]
@@ -321,11 +549,31 @@ def transform_payment_type_table(df):
 
 
 def transform_staff_table(df):
+    """
+    Applies transformation rules specific to a staff table to a DataFrame.
+
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing the staff data.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with applied transformations.
+
+    Example:
+    ```
+    transformed_df = transform_staff_table(staff_dataframe)
+    ```
+
+    Notes:
+    - This function assumes that the input DataFrame contains staff-related
+      columns such as 'staff_id', 'last_updated', 'created_at', etc.
+    - It creates new columns, such as 'last_updated_date', 'last_updated_time',
+      and 'staff_record_id'.
+    - It drops columns 'last_updated', 'created_at', and 'department_id'
+      from the input DataFrame.
+    """
     df["last_updated_date"] = df["last_updated"].dt.date
     df["last_updated_time"] = df["last_updated"].dt.time
-
     df["staff_record_id"] = df["staff_id"]
-
     df.drop(
         columns=["last_updated", "created_at", "department_id"], inplace=True
     )
@@ -333,6 +581,33 @@ def transform_staff_table(df):
 
 
 def transform_transaction_table(df):
+    """
+    Applies transformation rules specific to a transaction
+    table to a DataFrame.
+
+    Parameters:
+    - df (DataFrame): The pandas DataFrame containing the transaction data.
+
+    Returns:
+    - DataFrame: A pandas DataFrame with applied transformations.
+
+    Example:
+    ```
+    transformed_df = transform_transaction_table(transaction_dataframe)
+    ```
+
+    Notes:
+    - This function assumes that the input DataFrame
+    contains transaction-related
+      columns such as 'transaction_id', 'last_updated',
+      'created_at', etc.
+    - It creates new columns, such as 'last_updated_date',
+    'last_updated_time',
+      and 'transaction_record_id'.
+    - It replaces NaN values with None.
+    - It drops columns 'last_updated' and 'created_at'
+    from the input DataFrame.
+    """
     df["last_updated_date"] = df["last_updated"].dt.date
     df["last_updated_time"] = df["last_updated"].dt.time
     df["transaction_record_id"] = df["transaction_id"]
@@ -343,7 +618,6 @@ def transform_transaction_table(df):
         ],
         inplace=True,
     )
-
     return df
 
 
