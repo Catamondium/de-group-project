@@ -10,9 +10,6 @@ s3 = boto3.client("s3")
 logger = logging.getLogger()
 logger.setLevel("INFO")
 
-# TODO skeleton for terraform
-# flake8: noqa
-# TODO reenable me after work TODO BUG TEMP
 
 table_relations = {
         "currency": ('dim_currency', 'currency_record_id'),
@@ -37,16 +34,22 @@ def lambda_handler(event, context):
         )
         table_name = get_table_name(file_key)
         # get dataframe
+        logger.info(
+            f"📂 Processing file {file_key} from bucket {bucket_name}"
+        )
         df = get_df_from_parquet(file_key, bucket_name)
         # get db_table_name and primary_key
         table_name, primary_key = table_relations[table_name]
         # create query template for specific table fill with placeholders
         sql_query_template = create_query(table_name, primary_key, df)
         # insert
+        logger.info(f"🚀 Executing SQL query on table {table_name}")
         df_insertion(sql_query_template, df, table_name)
+        logger.info(f"✅ Successfully inserted data into {table_name}")
         return 'Ok'
     except Exception as e:
-        logger.error(e)
+        logger.error(
+            f"❌ Failed to process file: {str(e)}")
 
 
 def create_query(table_name, primary_key, df):
@@ -75,19 +78,23 @@ def get_table_name(key):
 
 
 def df_insertion(query, df, table_name):
-    username = environ.get("PGUSER2", "testing")
-    password = environ.get("PGPASSWORD2", "testing")
-    host = environ.get("PGHOST2", "testing")
-    port = environ.get("PGPORT2", "5432")
-    database = environ.get("PGDATABASE2")
+    try:
+        username = environ.get("PGUSER2", "testing")
+        password = environ.get("PGPASSWORD2", "testing")
+        host = environ.get("PGHOST2", "testing")
+        port = environ.get("PGPORT2", "5432")
+        database = environ.get("PGDATABASE2")
 
-    with pg.Connection(username,
-                       password=password,
-                       host=host,
-                       port=port,
-                       database=database) as con:
-        ps = con.prepare(query)
-        for _, row in df.iterrows():
-            ps.run(**row.to_dict())
-        #
-    return f"{table_name} Loaded ✅️🤘️"
+        with pg.Connection(username,
+                           password=password,
+                           host=host,
+                           port=port,
+                           database=database) as con:
+            ps = con.prepare(query)
+            for _, row in df.iterrows():
+                ps.run(**row.to_dict())
+            #
+        return f"{table_name} Loaded ✅️🤘️"
+    except Exception as e:
+        logger.error(
+            f"❗ Failed to insert data into {table_name}: {str(e)}")
