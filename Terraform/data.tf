@@ -17,7 +17,7 @@ data "archive_file" "extraction_lambda" {
   type        = "zip"
   source_file = "${path.module}/../src/extractor.py"
   output_path = "${path.module}/../extraction_lambda.zip"
-  depends_on = [null_resource.extraction]
+
 }
 data "archive_file" "transformation_lambda" {
   /*
@@ -34,8 +34,6 @@ data "archive_file" "transformation_lambda" {
   type        = "zip"
   source_file = "${path.module}/../src/transformation.py"
   output_path = "${path.module}/../transformation_lambda.zip"
-
-  depends_on = [null_resource.transformation]
 }
 data "archive_file" "loader_lambda" {
   /*
@@ -49,56 +47,12 @@ data "archive_file" "loader_lambda" {
     Returns:
         None
     */
-  type        = "zip"
+  type = "zip"
 
   source_file = "${path.module}/../src/loader.py"
   output_path = "${path.module}/../loader_lambda.zip"
-  depends_on = [null_resource.loader]
-}
-
-resource "null_resource" "extraction" {
-  /*
-    Creates a null resource that triggers the creation of an archive file containing the Lambda function code and dependencies.
-
-    Args:
-        triggers (dict): A dictionary specifying the trigger conditions for the null resource.
-
-    Returns:
-        None
-    */
-  triggers = {
-    main = sha256(file("${path.module}/../src/extractor.py"))
-  }
-}
-resource "null_resource" "transformation" {
-  /*
-    Creates a null resource that triggers the creation of an archive file containing the Lambda function code and dependencies.
-
-    Args:
-        triggers (dict): A dictionary specifying the trigger conditions for the null resource.
-
-    Returns:
-        None.
-    */
-  triggers = {
-    main = sha256(file("${path.module}/../src/transformation.py"))
-  }
-}
-resource "null_resource" "loader" {
-  /*
-    Creates a null resource that triggers the creation of an archive file containing the Lambda function code and dependencies.
-
-    Args:
-        triggers (dict): A dictionary specifying the trigger conditions for the null resource.
-
-    Returns:
-        None
-    */
-  triggers = {
-    main = sha256(file("${path.module}/../src/loader.py"))
-  }
 }
 
 data "aws_s3_bucket" "utility_bucket" {
-  bucket = "${var.utility_bucket}"
+  bucket = var.utility_bucket
 }
