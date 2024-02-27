@@ -4,7 +4,6 @@ from json import loads
 import os
 import boto3
 import pandas as pd
-import numpy as np
 import awswrangler as wr
 import botocore
 

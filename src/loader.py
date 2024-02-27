@@ -71,7 +71,7 @@ def create_query(table_name, primary_key, df):
         df = df.astype(
             {col: "int64" for col in df.select_dtypes("float64").columns}
         )
-        sql_query_template= sql_query_template.replace(
+        sql_query_template = sql_query_template.replace(
             ":sales_order_id", "nullif(:sales_order_id, -1)"
         )
         sql_query_template = sql_query_template.replace(
