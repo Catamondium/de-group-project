@@ -89,9 +89,12 @@ def test_get_table_name():
     assert get_table_name(keys[1]) == "purchase_order"
 
 
-@patch("src.transformation.upload_parquet")
-@patch("src.transformation.get_df_from_parquet")
-def test_lambda_handler(mock_get_df_from_parquet, mock_upload_parquet):
+@patch("src.loader.df_insertion")
+@patch("src.loader.create_query")
+@patch("src.loader.get_df_from_parquet")
+def test_lambda_handler(
+    mock_get_df_from_parquet, mock_create_query, mock_df_insertion
+):
     # TODO
     data = {
         "address_id": [1, 2, 3],
@@ -125,11 +128,13 @@ def test_lambda_handler(mock_get_df_from_parquet, mock_upload_parquet):
 
     # mocking
     mock_get_df_from_parquet.return_value = df
-    mock_upload_parquet.return_value = 0
+    mock_create_query.return_value = "sql query"
 
     # ACT
     res = lambda_handler(event, context)
-    assert res is None
+    mock_create_query.assert_called_once()
+    mock_df_insertion.assert_called_once()
+    assert res == "Ok"
 
 
 def normalize_sql_query(query):
