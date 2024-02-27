@@ -266,6 +266,16 @@ def get_last_updated_time(s3) -> datetime | None:
 
 
 def set_last_updated_time(s3, current_time: datetime):
+    """
+    Sets the last updated time in an S3 bucket.
+
+    Parameters:
+    - s3 (boto3.client): An instance of the boto3 S3 client.
+    - current_time (datetime): The current datetime
+    object representing the time to be set.
+    Returns:
+    - None
+    """
     bucket = environ.get("S3_CONTROL_BUCKET", "control_bucket")
     logger.info("Writing out last extraction time")
     s3.put_object(
