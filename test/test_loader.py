@@ -84,7 +84,8 @@ def test_get_df_from_parquet(s3, import_parquet_file):
 
 
 def test_get_table_name():
-    keys = ["2024-02-15T19:01:53/address.pqt", "2024-02-21/purchase_order.pqt"]
+    keys = ["2024-02-15T19:01:53/address.pqt", 
+            "2024-02-21/purchase_order.pqt"]
     assert get_table_name(keys[0]) == "address"
     assert get_table_name(keys[1]) == "purchase_order"
 
@@ -161,9 +162,11 @@ def test_create_query_dim_transaction():
     df = pd.DataFrame(data)
     expected_query = """
         INSERT INTO dim_transaction (id, sales_order_id, purchase_order_id)
-        VALUES (:id, nullif(:sales_order_id, -1), nullif(:purchase_order_id, -1))
+        VALUES (:id, nullif(:sales_order_id, -1), 
+        nullif(:purchase_order_id, -1))
         ON CONFLICT (id)
-        DO UPDATE SET sales_order_id = EXCLUDED.sales_order_id, purchase_order_id = EXCLUDED.purchase_order_id;
+        DO UPDATE SET sales_order_id = EXCLUDED.sales_order_id, 
+        purchase_order_id = EXCLUDED.purchase_order_id;
         """
 
     # ACT
