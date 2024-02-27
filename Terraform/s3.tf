@@ -42,7 +42,7 @@ resource "aws_s3_object" "extraction_lambda_code" {
   bucket      = var.utility_bucket
   key         = "lambda-code/extraction_lambda.zip"
   source      = "${path.module}/../extraction_lambda.zip"
-  source_hash = filemd5("${path.module}/../src/extractor.zip")
+  source_hash = filemd5("${path.module}/../src/extractor.py")
 
 }
 resource "aws_s3_object" "transformation_lambda_code" {
