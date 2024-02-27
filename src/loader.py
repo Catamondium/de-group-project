@@ -93,7 +93,6 @@ def df_insertion(query, df, table_name):
         port = environ.get("PGPORT2", "5432")
         database = environ.get("PGDATABASE2")
         if table_name == "dim_transaction":
-            print("got to here")
             df = df.replace({np.nan: -1})
             df = df.astype(
                 {col: "int64" for col in df.select_dtypes("float64").columns}
