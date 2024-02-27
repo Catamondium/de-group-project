@@ -1,10 +1,12 @@
 import boto3
 import logging
 import pg8000.native as pg
+
 # import pandas as pd
 # from io import BytesIO
 import awswrangler as wr
 from os import environ
+import numpy as np
 
 s3 = boto3.client("s3")
 logger = logging.getLogger()
@@ -12,16 +14,16 @@ logger.setLevel("INFO")
 
 
 table_relations = {
-        "currency": ('dim_currency', 'currency_record_id'),
-        "payment": ('fact_payment', 'payment_record_id'),
-        "transaction": ('dim_transaction', 'transaction_record_id'),
-        "design": ('dim_design', 'design_record_id'),
-        "address": ('dim_location', 'location_record_id'),
-        "staff": ('dim_staff', 'staff_record_id'),
-        "counterparty": ('dim_counterparty', 'counterparty_record_id'),
-        "purchase_order": ('fact_purchase_order', 'purchase_record_id'),
-        "payment_type": ('dim_payment_type', 'payment_type_record_id'),
-        "sales_order": ('fact_sales_order', 'sales_record_id')
+    "currency": ("dim_currency", "currency_record_id"),
+    "payment": ("fact_payment", "payment_record_id"),
+    "transaction": ("dim_transaction", "transaction_record_id"),
+    "design": ("dim_design", "design_record_id"),
+    "address": ("dim_location", "location_record_id"),
+    "staff": ("dim_staff", "staff_record_id"),
+    "counterparty": ("dim_counterparty", "counterparty_record_id"),
+    "purchase_order": ("fact_purchase_order", "purchase_record_id"),
+    "payment_type": ("dim_payment_type", "payment_type_record_id"),
+    "sales_order": ("fact_sales_order", "sales_record_id"),
 }
 
 
@@ -34,9 +36,7 @@ def lambda_handler(event, context):
         )
         table_name = get_table_name(file_key)
         # get dataframe
-        logger.info(
-            f"📂 Processing file {file_key} from bucket {bucket_name}"
-        )
+        logger.info(f"📂 Processing file {file_key} from bucket {bucket_name}")
         df = get_df_from_parquet(file_key, bucket_name)
         # get db_table_name and primary_key
         table_name, primary_key = table_relations[table_name]
@@ -46,17 +46,18 @@ def lambda_handler(event, context):
         logger.info(f"🚀 Executing SQL query on table {table_name}")
         df_insertion(sql_query_template, df, table_name)
         logger.info(f"✅ Successfully inserted data into {table_name}")
-        return 'Ok'
+        return "Ok"
     except Exception as e:
-        logger.error(
-            f"❌ Failed to process file: {str(e)}")
+        logger.error(f"❌ Failed to process file: {str(e)}")
 
 
 def create_query(table_name, primary_key, df):
+
     columns = list(df.columns)
     placeholders = ", ".join([f":{col}" for col in columns])
     assignments = ", ".join(
-        [f"{col} = EXCLUDED.{col}" for col in columns if col != primary_key])
+        [f"{col} = EXCLUDED.{col}" for col in columns if col != primary_key]
+    )
 
     sql_query_template = f"""
     INSERT INTO {table_name} ({', '.join(columns)})
@@ -64,6 +65,19 @@ def create_query(table_name, primary_key, df):
     ON CONFLICT ({primary_key})
     DO UPDATE SET {assignments};
     """
+    if table_name == "dim_transaction":
+        print("got to here")
+        df = df.replace({np.nan: -1})
+        df = df.astype(
+            {col: "int64" for col in df.select_dtypes("float64").columns}
+        )
+        sql_query_template= sql_query_template.replace(
+            ":sales_order_id", "nullif(:sales_order_id, -1)"
+        )
+        sql_query_template = sql_query_template.replace(
+            ":purchase_order_id", "nullif(:purchase_order_id, -1)"
+        )
+        print("dim_transaction sql", sql_query_template)
     return sql_query_template
 
 
@@ -85,16 +99,17 @@ def df_insertion(query, df, table_name):
         port = environ.get("PGPORT2", "5432")
         database = environ.get("PGDATABASE2")
 
-        with pg.Connection(username,
-                           password=password,
-                           host=host,
-                           port=port,
-                           database=database) as con:
+        with pg.Connection(
+            username,
+            password=password,
+            host=host,
+            port=port,
+            database=database,
+        ) as con:
             ps = con.prepare(query)
             for _, row in df.iterrows():
                 ps.run(**row.to_dict())
             #
         return f"{table_name} Loaded ✅️🤘️"
     except Exception as e:
-        logger.error(
-            f"❗ Failed to insert data into {table_name}: {str(e)}")
+        logger.error(f"❗ Failed to insert data into {table_name}: {str(e)}")
