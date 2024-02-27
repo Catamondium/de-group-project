@@ -38,11 +38,11 @@ resource "aws_s3_object" "extraction_lambda_code" {
     Returns:
         None
     */
-    
+
   bucket      = var.utility_bucket
   key         = "lambda-code/extraction_lambda.zip"
   source      = "${path.module}/../extraction_lambda.zip"
-  source_hash = filemd5("${path.module}/../extraction_lambda.zip")
+  source_hash = filemd5("${path.module}/../src/extractor.zip")
 
 }
 resource "aws_s3_object" "transformation_lambda_code" {
@@ -59,7 +59,7 @@ resource "aws_s3_object" "transformation_lambda_code" {
   bucket      = var.utility_bucket
   key         = "lambda-code/transformation_lambda.zip"
   source      = "${path.module}/../transformation_lambda.zip"
-  source_hash = filemd5("${path.module}/../transformation_lambda.zip")
+  source_hash = filemd5("${path.module}/../src/transformation.py")
 
 }
 resource "aws_s3_object" "loader_lambda_code" {
@@ -76,7 +76,7 @@ resource "aws_s3_object" "loader_lambda_code" {
   bucket      = var.utility_bucket
   key         = "lambda-code/loader_lambda.zip"
   source      = "${path.module}/../loader_lambda.zip"
-  source_hash = filemd5("${path.module}/../loader_lambda.zip")
+  source_hash = filemd5("${path.module}/../src/loader.py")
 
 }
 
