@@ -10,10 +10,14 @@ import pytest
 from sample_datasets import sample_dataset
 from moto import mock_aws
 from t_utils import inhibit_CI
-from extractor import get_last_updated_time, set_last_updated_time, get_query
-from extractor import lambda_handler
-from extractor import rows_to_dict, upload_parquet
-from extractor import extract
+from src.extractor import (
+    get_last_updated_time,
+    set_last_updated_time,
+    get_query,
+)
+from src.extractor import lambda_handler
+from src.extractor import rows_to_dict, upload_parquet
+from src.extractor import extract
 
 
 class SAME_DF:
@@ -121,7 +125,7 @@ def test_upload_parquet(s3):
     assert key in files
 
 
-@patch("extractor.upload_parquet")
+@patch("src.extractor.upload_parquet")
 def test_extract(upload):
     """
     tests mocked db extraction
@@ -149,11 +153,11 @@ def test_extract(upload):
 
 
 @mock_aws
-@patch("extractor.set_last_updated_time")
-@patch("extractor.get_last_updated_time")
-@patch("extractor.client")
-@patch("extractor.extract")
-@patch("extractor.pg.Connection")
+@patch("src.extractor.set_last_updated_time")
+@patch("src.extractor.get_last_updated_time")
+@patch("src.extractor.client")
+@patch("src.extractor.extract")
+@patch("src.extractor.pg.Connection")
 def test_lambda_handler(
     conn, MockExtract, client, get_last_updated_time, set_last_updated_time
 ):
@@ -212,8 +216,7 @@ def test_integrate(s3, mockdb_creds):
         "payment_type",
         "sales_order",
     ]
-    event = {"time": "2024-01-01T10:45:18Z"}
-
+    event = {"time": "2025-01-01T10:45:18Z"}
     # ACT
     s3.create_bucket(
         Bucket="ingestion",
@@ -228,20 +231,19 @@ def test_integrate(s3, mockdb_creds):
     lambda_handler(event, "")
 
     objects = s3.list_objects_v2(Bucket="ingestion")
-    print(objects)
     files = [file["Key"] for file in objects["Contents"]]
 
     assert len(files) == 11
 
     for table in TABLES:
-        expected_file_name = f"2024-01-01T10:45:18/{table}.pqt"
+        expected_file_name = f"2025-01-01T10:45:18/{table}.pqt"
         assert expected_file_name in files
 
         expected_table = sample_dataset[table]
         # print(expected_table[0], table, '-------------------------------')
 
         resp = s3.get_object(
-            Bucket="ingestion", Key=f"2024-01-01T10:45:18/{table}.pqt"
+            Bucket="ingestion", Key=f"2025-01-01T10:45:18/{table}.pqt"
         )
         df = pd.read_parquet(BytesIO(resp["Body"].read()))
         existing_table = df.to_records()
@@ -323,7 +325,8 @@ def test_get_queries():
             d.department_name, d.location
             FROM staff as t
             LEFT JOIN department d ON t.department_id = d.department_id
-            WHERE t.last_updated >= '2022-02-02';"""
+            WHERE t.last_updated >= '2022-02-02'
+            AND t.last_updated < '2025-01-01';"""
         ),
         normalize_sql_query(
             """
@@ -337,31 +340,35 @@ def test_get_queries():
             a.phone
             FROM counterparty t
             LEFT JOIN address a on t.legal_address_id = a.address_id
-            WHERE t.last_updated >= '2022-02-02';"""
+            WHERE t.last_updated >= '2022-02-02'
+            AND t.last_updated < '2025-01-01';"""
         ),
         normalize_sql_query(
             """
             SELECT * FROM design as t
-            WHERE t.last_updated >= '2022-02-02';
+            WHERE t.last_updated >= '2022-02-02'
+            AND t.last_updated < '2025-01-01';
             """
         ),
     ]
     assert (
-        normalize_sql_query(get_query("staff", "2022-02-02"))
+        normalize_sql_query(get_query("staff", "2022-02-02", "2025-01-01"))
         == expected_output[0]
     )
     assert (
-        normalize_sql_query(get_query("counterparty", "2022-02-02"))
+        normalize_sql_query(
+            get_query("counterparty", "2022-02-02", "2025-01-01")
+        )
         == expected_output[1]
     )
     assert (
-        normalize_sql_query(get_query("design", "2022-02-02"))
+        normalize_sql_query(get_query("design", "2022-02-02", "2025-01-01"))
         == expected_output[2]
     )
 
 
 @inhibit_CI
-@patch("extractor.get_last_updated_time")
+@patch("src.extractor.get_last_updated_time")
 def test_database_error(mock_get_time, caplog, mockdb_creds):
     mock_get_time.return_value = "not a time"
 
@@ -373,7 +380,7 @@ def test_database_error(mock_get_time, caplog, mockdb_creds):
 
 
 @inhibit_CI
-@patch("extractor.upload_parquet")
+@patch("src.extractor.upload_parquet")
 def test_client_error(mock_upload_parquet, caplog, mockdb_creds):
     error = {"Error": {"Code": "404", "Message": "Bucket not found"}}
 

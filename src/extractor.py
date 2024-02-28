@@ -1,8 +1,8 @@
-import pandas as pd
+from datetime import datetime
 import logging
 from os import environ
+import pandas as pd
 from time import sleep
-from datetime import datetime
 import pg8000.native as pg
 from boto3 import client
 from botocore.exceptions import ClientError
@@ -20,7 +20,7 @@ DIM_TABLES = [
     "address",
     "staff",
     "counterparty",
-    "payment_type"
+    "payment_type",
 ]
 
 FACT_TABLES = [
@@ -30,7 +30,7 @@ FACT_TABLES = [
 ]
 
 
-def get_query(table: str, since: datetime) -> str:
+def get_query(table: str, since: datetime, event_time: datetime) -> str:
     """
     Generates a SQL query string for a given table and the last
     successful update time.
@@ -75,9 +75,10 @@ def get_query(table: str, since: datetime) -> str:
                 """,
     }
     if since is not None:
-        ending_suffix = f"WHERE t.last_updated >= {pg.literal(since)};"
+        ending_suffix = f"""WHERE t.last_updated >= {pg.literal(since)}
+        AND t.last_updated < {pg.literal(event_time)};"""
     else:
-        ending_suffix = ";"
+        ending_suffix = f"WHERE t.last_updated < {pg.literal(event_time)};"
     if table in ["staff", "counterparty"]:
         return f"{queries[table]}{ending_suffix}"
     else:
@@ -108,7 +109,7 @@ def extract(client, conn: pg.Connection, bucket, table, time, since):
 
     """
     logger.info(f"extracting {table}")
-    sql = get_query(table, since)
+    sql = get_query(table, since, time)
     rows = conn.run(sql)
     if len(rows) > 0:
         timestring = time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -175,14 +176,14 @@ def lambda_handler(event, context):
             if table.casefold() in DIM_TABLES:
                 extract(s3, connection, bucket, table, time, since)
 
-        if environ.get('CI', 'false') == 'false':
+        if environ.get("CI", "false") == "false":
             sleep(120)
 
         for table in tables:
             if table.casefold() in FACT_TABLES:
                 extract(s3, connection, bucket, table, time, since)
 
-        set_last_updated_time(s3, datetime.now())
+        set_last_updated_time(s3, time)
     except pg.DatabaseError as db_error:
         logger.info("pg8000 error: %s", db_error)
     except ClientError as e:
