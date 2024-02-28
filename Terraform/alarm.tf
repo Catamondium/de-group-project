@@ -157,7 +157,7 @@ resource "aws_cloudwatch_metric_alarm" "loader_alert_errors" {
   alarm_name          = "LoaderErrorAlert"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   metric_name         = "ErrorMetric"
-  namespace           = "TransformationLambdaError"
+  namespace           = "LoaderLambdaError"
   evaluation_periods  = 1
   period              = 60
   statistic           = "Sum"
