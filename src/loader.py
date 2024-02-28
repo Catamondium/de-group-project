@@ -116,12 +116,6 @@ def create_query(table_name, primary_key, df):
     assignments = ", ".join(
         [f"{col} = EXCLUDED.{col}" for col in columns if col != primary_key])
 
-    columns = list(df.columns)
-    placeholders = ", ".join([f":{col}" for col in columns])
-    assignments = ", ".join(
-        [f"{col} = EXCLUDED.{col}" for col in columns if col != primary_key]
-    )
-
     sql_query_template = f"""
     INSERT INTO {table_name} ({', '.join(columns)})
     VALUES ({placeholders})
@@ -228,22 +222,6 @@ def df_insertion(query, df, table_name):
     - The data insertion process is performed row by row
     using the prepared statement.
     """
-    username = environ.get("PGUSER2", "testing")
-    password = environ.get("PGPASSWORD2", "testing")
-    host = environ.get("PGHOST2", "testing")
-    port = environ.get("PGPORT2", "5432")
-    database = environ.get("PGDATABASE2")
-
-    with pg.Connection(username,
-                       password=password,
-                       host=host,
-                       port=port,
-                       database=database) as con:
-        ps = con.prepare(query)
-        for _, row in df.iterrows():
-            ps.run(**row.to_dict())
-        #
-    return f"{table_name} Loaded ✅️🤘️"
     try:
         username = environ.get("PGUSER2", "testing")
         password = environ.get("PGPASSWORD2", "testing")
